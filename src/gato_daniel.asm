@@ -19,9 +19,23 @@
 
 .text
 
-# LG_LIMPIAR_TABLERO: TABLERO = 0, TURNO = 1, RESULTADO = RES_CURSO
-# Entrada: ninguna   Salida: ninguna            [ESQUELETO - Modulo 1]
+# LG_LIMPIAR_TABLERO: deja el tablero listo para una partida nueva
+#   TABLERO[0..8] = 0, TURNO = 1 (empieza el jugador), RESULTADO = RES_CURSO
+# Entrada: ninguna   Salida: ninguna
+# Usa: $t0-$t3 (procedimiento hoja, no necesita guardar $ra)
 LG_LIMPIAR_TABLERO:
+    la   $t0, TABLERO           # $t0 = direccion de la casilla 0
+    li   $t1, 0                 # $t1 = contador i = 0
+    li   $t3, LG_NUM_CASILLAS   # $t3 = 9 (limite del ciclo)
+lg_lt_bucle:
+    sb   $zero, 0($t0)          # TABLERO[i] = 0
+    addi $t0, $t0, 1            # avanza a la siguiente casilla (1 byte)
+    addi $t1, $t1, 1            # i = i + 1
+    blt  $t1, $t3, lg_lt_bucle  # si i < 9, repite
+    li   $t2, 1
+    sb   $t2, TURNO             # TURNO = 1 (jugador)
+    li   $t2, RES_CURSO
+    sb   $t2, RESULTADO         # RESULTADO = 0 (partida en curso)
     jr   $ra
 
 # LG_VALIDAR_JUGADA: $a0 = casilla (1-9)
