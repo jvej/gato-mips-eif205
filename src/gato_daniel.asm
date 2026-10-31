@@ -16,6 +16,11 @@
 .eqv LG_VACIA         0
 .eqv LG_FICHA_X       1
 .eqv LG_FICHA_O       2
+.macro LG_DIR_CASILLA(%dest, %casilla)
+    la   %dest, TABLERO
+    add  %dest, %dest, %casilla
+    addi %dest, %dest, -1
+.end_macro
 
 .text
 
@@ -39,14 +44,29 @@ lg_lt_bucle:
     jr   $ra
 
 # LG_VALIDAR_JUGADA: $a0 = casilla (1-9)
-# Salida: $v0 = 0 jugada valida, 1 jugada invalida   [ESQUELETO - Modulo 2]
+# Salida: $v0 = 0 jugada valida, 1 jugada invalida
+# Invalida si la casilla esta fuera de 1-9 o ya esta ocupada.
+# Usa: $t0-$t3 (procedimiento hoja)
 LG_VALIDAR_JUGADA:
-    li   $v0, 1                 # por ahora toda jugada se rechaza
+    li   $v0, 1                 # supone invalida hasta demostrar lo contrario
+    li   $t0, 1
+    blt  $a0, $t0, lg_vj_fin    # casilla < 1  -> invalida
+    li   $t0, LG_NUM_CASILLAS
+    bgt  $a0, $t0, lg_vj_fin    # casilla > 9  -> invalida
+    LG_DIR_CASILLA($t1, $a0)    # $t1 = &TABLERO[casilla - 1]
+    lb   $t3, 0($t1)            # $t3 = contenido de la casilla
+    bnez $t3, lg_vj_fin         # distinta de vacia -> ocupada -> invalida
+    li   $v0, 0                 # paso todas las pruebas: valida
+lg_vj_fin:
     jr   $ra
 
 # LG_COLOCAR_FICHA: $a0 = casilla (1-9), $a1 = jugador (1 = X, 2 = O)
-# Salida: ninguna                                    [ESQUELETO - Modulo 2]
+# Escribe la ficha en TABLERO[casilla - 1].
+# NO valida: quien llama debe usar LG_VALIDAR_JUGADA antes.
+# Usa: $t0 (procedimiento hoja)
 LG_COLOCAR_FICHA:
+    LG_DIR_CASILLA($t0, $a0)    # $t0 = &TABLERO[casilla - 1]
+    sb   $a1, 0($t0)            # TABLERO[casilla - 1] = jugador
     jr   $ra
 
 # LG_VERIFICAR_FIN: actualiza RESULTADO (0 curso, 1 jugador, 2 CPU,
