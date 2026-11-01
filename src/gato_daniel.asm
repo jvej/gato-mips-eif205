@@ -22,6 +22,11 @@
     addi %dest, %dest, -1
 .end_macro
 
+# --- datos propios de la logica ---
+.data
+# Orden de preferencia de la CPU: centro, esquinas, lados (casillas 1-9)
+LG_ORDEN:     .byte 5,1,3,7,9,2,4,6,8
+
 .text
 
 # LG_LIMPIAR_TABLERO: deja el tablero listo para una partida nueva
@@ -118,7 +123,95 @@ lg_vf_curso:
     sb   $t4, RESULTADO
     jr   $ra
 
-# LG_TURNO_CPU: la CPU coloca su ficha (O) en una casilla libre
-# Entrada: ninguna   Salida: ninguna                 [ESQUELETO - Modulo 4]
+# LG_PROBAR_GANADA: $a0 = ficha (1 = X, 2 = O)
+# Salida: $v0 = casilla (1-9) donde esa ficha completaria una linea,
+#         o 0 si no existe ninguna.
+# Prueba cada casilla libre: coloca la ficha de forma provisional, llama a
+# LG_VERIFICAR_FIN, mira si RESULTADO == ficha y deshace la jugada.
+# Supone que RESULTADO = RES_CURSO al entrar (lo restaura al salir).
+# Usa $s0 (ficha), $s1 (casilla), $s2 (resultado): se guardan en la pila.
+LG_PROBAR_GANADA:
+    M_PUSH($ra)
+    M_PUSH($s0)
+    M_PUSH($s1)
+    M_PUSH($s2)
+    move $s0, $a0               # $s0 = ficha a probar
+    li   $s1, 1                 # $s1 = casilla actual (1-9)
+lg_pg_bucle:
+    move $a0, $s1
+    jal  LG_VALIDAR_JUGADA
+    bnez $v0, lg_pg_sig         # ocupada: no se puede probar
+    move $a0, $s1
+    move $a1, $s0
+    jal  LG_COLOCAR_FICHA       # jugada provisional
+    jal  LG_VERIFICAR_FIN
+    lb   $s2, RESULTADO         # resultado con la jugada provisional
+    move $a0, $s1
+    li   $a1, LG_VACIA
+    jal  LG_COLOCAR_FICHA       # deshace la jugada
+    li   $t0, RES_CURSO
+    sb   $t0, RESULTADO         # restaura RESULTADO
+    beq  $s2, $s0, lg_pg_hallada  # RESULTADO == ficha: esa jugada gana
+lg_pg_sig:
+    addi $s1, $s1, 1
+    li   $t0, LG_NUM_CASILLAS
+    ble  $s1, $t0, lg_pg_bucle  # mientras casilla <= 9
+    li   $v0, 0                 # ninguna jugada gana
+    j    lg_pg_fin
+lg_pg_hallada:
+    move $v0, $s1               # devuelve la casilla ganadora
+lg_pg_fin:
+    M_POP($s2)
+    M_POP($s1)
+    M_POP($s0)
+    M_POP($ra)
+    jr   $ra
+
+# LG_PRIMERA_LIBRE: recorre LG_ORDEN y devuelve en $v0 la primera casilla
+# libre segun esa preferencia, o 0 si el tablero esta lleno.
+# Usa $s0 (puntero a LG_ORDEN) y $s1 (contador): se guardan en la pila.
+LG_PRIMERA_LIBRE:
+    M_PUSH($ra)
+    M_PUSH($s0)
+    M_PUSH($s1)
+    la   $s0, LG_ORDEN          # puntero a la preferencia actual
+    li   $s1, 0                 # cuantas se han probado
+lg_pl_bucle:
+    lb   $a0, 0($s0)            # casilla candidata
+    jal  LG_VALIDAR_JUGADA
+    beqz $v0, lg_pl_hallada     # 0 = esta libre
+    addi $s0, $s0, 1
+    addi $s1, $s1, 1
+    li   $t0, LG_NUM_CASILLAS
+    blt  $s1, $t0, lg_pl_bucle
+    li   $v0, 0                 # ninguna libre
+    j    lg_pl_fin
+lg_pl_hallada:
+    lb   $v0, 0($s0)            # devuelve la casilla elegida
+lg_pl_fin:
+    M_POP($s1)
+    M_POP($s0)
+    M_POP($ra)
+    jr   $ra
+
+# LG_TURNO_CPU: la CPU coloca su ficha (O). Prioridad:
+#   1) ganar   2) bloquear al jugador   3) centro, esquinas, lados
+# Entrada: ninguna   Salida: ninguna
+# No usa $s, pero llama a otras rutinas con jal: guarda $ra en la pila.
 LG_TURNO_CPU:
+    M_PUSH($ra)
+    li   $a0, LG_FICHA_O
+    jal  LG_PROBAR_GANADA       # 1) puede ganar la CPU?
+    bnez $v0, lg_tc_jugar
+    li   $a0, LG_FICHA_X
+    jal  LG_PROBAR_GANADA       # 2) ganaria el jugador? (bloquear)
+    bnez $v0, lg_tc_jugar
+    jal  LG_PRIMERA_LIBRE       # 3) preferencias
+    beqz $v0, lg_tc_fin         # tablero lleno: no hay nada que jugar
+lg_tc_jugar:
+    move $a0, $v0
+    li   $a1, LG_FICHA_O
+    jal  LG_COLOCAR_FICHA
+lg_tc_fin:
+    M_POP($ra)
     jr   $ra
