@@ -2,12 +2,11 @@
 
 **Proyecto 2 – Juego del Gato (MIPS32 / MARS) – EIF205 Arquitectura de Computadoras**
 **Integrantes:** Kimberly Angulo Mendoza, Daniel Centeno Gutiérrez, Jeferson Sánchez Sánchez
-**Última actualización:** 31/10/2026
+**Última actualización:** 05/11/2026
 
 > En este documento se registra cómo se construyó la lógica, qué se probó y qué errores aparecieron.
 > Se organiza en cuatro secciones: *1. Descripción general*, *2. Descripción de módulos*,
 > *3. Mapeo de memoria* y *4. Bitácora de pruebas*.
-> Nota: La parte de interfaz y entrada (Kim) aún no está integrada, por lo que se marca como **pendiente**. Eliminar esta nota cuando se integre.
 
 ---
 
@@ -28,16 +27,16 @@ los aborda:
 |---|---|
 | Juego 2D simple | Juego del Gato: tablero de 3 × 3, jugador (X) contra la computadora (O) |
 | Lógica del juego (movimientos, colisiones) | Módulo de lógica `LG_*`: validación de casilla (rango y ocupación), detección de línea ganadora y de empate, turno de la CPU |
-| Gráficos en modo texto o gráfico | Modo texto en la consola de MARS (*Run I/O*), a cargo del módulo de vista (**pendiente**) |
-| Interfaz de usuario sencilla | Módulo de vista `UI_*` (**pendiente**) |
-| Entrada por teclado | Rutina `IN_LEER_TECLA` (**pendiente**); en MARS se escribe la tecla y se pulsa ENTER en *Run I/O* |
+| Gráficos en modo texto o gráfico | Modo texto en la consola de MARS (*Run I/O*), a cargo del módulo de vista (`UI_*`, sección 2.5) |
+| Interfaz de usuario sencilla | Módulo de vista `UI_*`: menú, tablero, marcador y pantallas de pausa, resultado, Game Over y victoria |
+| Entrada por teclado | Rutina `IN_LEER_TECLA`; en MARS se escribe la tecla y se pulsa ENTER en *Run I/O* |
 | Puntuación acumulativa y marcador máximo (*High Score*) | Módulo de estados: `PUNTOS` y `HIGHSCORE` (`ST_ACTUALIZAR_PUNTOS`, `ST_ACTUALIZAR_HIGHSCORE`) |
 | Condiciones explícitas de victoria y derrota, con reinicio sin reiniciar el emulador | Estados `EST_VICTORIA` y `EST_GAMEOVER`; `ST_NUEVO_JUEGO` reinicia puntos y vidas conservando el récord |
 | Efectos de sonido (opcional) | No contemplados en los módulos actuales |
 | Documentación: README e informe técnico | `README.md` (instrucciones de ejecución) y este informe |
 | Código bien comentado | Las rutinas documentan su propósito y sus parámetros en comentarios |
 | Alineación de memoria (`.align`), uso del *stack frame* (`$sp`) y gestión de retrasos | `.align 2` antes de las palabras; `M_PUSH` / `M_POP` en cada procedimiento; `M_DELAY` (syscall 32) en el turno de la CPU y al terminar la partida |
-| Control de versiones con Git y commits distribuidos entre los integrantes | Repositorio `jvej/gato-mips-eif205`, ramas por módulo (`estado`, `logica`) y commits por módulo |
+| Control de versiones con Git y commits distribuidos entre los integrantes | Repositorio `jvej/gato-mips-eif205`, ramas por módulo (`estado`, `logica`, `interfaz`) y commits por módulo |
 
 ### 1.2 Reglas del juego
 
@@ -101,7 +100,7 @@ apoyado en procedimientos y macros. En términos concretos, el proyecto busca:
 1. Jeferson definió en la cabecera de su archivo el **contrato entre módulos** (rutinas `LG_*`, `IN_*` y `UI_*`
    con sus parámetros y valores de retorno).
 2. Cada integrante trabaja su parte en un archivo propio. Jeferson usó la rama `estado` para el módulo de
-   estados y Daniel la rama `logica` para la lógica.
+   estados, Daniel la rama `logica` para la lógica y Kim la rama `interfaz` para la vista.
 3. La rama `logica` incorporó lo hecho en `estado` y, sobre eso, se construyó la lógica por módulos (ver 2.4.1),
    con un commit por módulo.
 4. Las partes integradas se reunieron en un **único archivo**, `src/gato.s`. Es un solo archivo a propósito:
@@ -115,7 +114,7 @@ apoyado en procedimientos y macros. En términos concretos, el proyecto busca:
 |---|---|---|
 | Jeferson Sánchez | Estado (2.3) | Datos, programa principal (`main`), máquina de estados, puntuación, vidas, high score y reinicio. Prefijo `ST_`. **Integrado** en `src/gato.s`. |
 | Daniel Centeno| Lógica (2.4) | Tablero, validación de jugadas, colocación de fichas, detección de ganador y empate, turno de la CPU. Prefijo `LG_`. **Integrado** en `src/gato.s`. |
-| Kimberly Ángulo | Vista (2.5) | Entrada por teclado, interfaz (tablero, marcador, pantallas) y macros de pantalla. Prefijos `IN_`, `UI_` y `M_`. **Pendiente.** |
+| Kimberly Angulo | Vista (2.5) | Entrada por teclado, interfaz (tablero, marcador, pantallas) y macros de pantalla. Prefijos `IN_`, `UI_` y `M_`. **Integrado** en `src/gato.s` (también en `src/gato_kim.asm`). |
 
 ### 2.3 Estado
 
@@ -274,25 +273,83 @@ y `$s1` (contador) en la pila.
 ### 2.5 Vista
 
 **Propósito.** Es la capa que habla con el usuario: lee el teclado y dibuja el tablero, el marcador y las pantallas del
-juego en la consola de MARS. Las rutinas `UI_*` solo dibujan: leen variables pero no las cambian. Responsable: Kimberly Ángulo.
-Prefijos `IN_`, `UI_` y `M_`.
+juego en la consola de MARS. Las rutinas `UI_*` solo dibujan: leen variables pero no las cambian. Responsable: Kimberly Angulo.
+Prefijos `IN_`, `UI_` y `M_` (etiquetas locales `il_`, `uc_`, `udt_`, `hud_`, `umr_`, `upf_`).
 
-**Estado: pendiente de integración.** El resto del programa ya llama a estas rutinas según el contrato, pero aún no
-están escritas en `src/gato.s`; mientras no se integren, el archivo no ensambla solo.
+**Estado: integrado** al final de `src/gato.s`, después del módulo de la lógica. El mismo código está también en
+`src/gato_kim.asm`, que sirve como archivo de trabajo del módulo; no ensambla solo porque necesita las macros, las
+variables y los mensajes que define Jeferson.
 
-| Módulo | Propósito (según el contrato y su uso en `ST_*`) | Estado |
-|---|---|---|
-| `IN_LEER_TECLA` | Espera una tecla. Devuelve en `$v0` un dígito 1-9, una letra mayúscula, 13 (ENTER) o 27 (ESC). En MARS traduce J → 13 y Q → 27, y descarta los saltos de línea | Pendiente |
-| `IN_VACIAR_BUFER` | Descarta las teclas pendientes del teclado | Pendiente |
-| `UI_DIBUJAR_TABLERO` | Dibuja el tablero a partir de `TABLERO` | Pendiente |
-| `UI_DIBUJAR_HUD` | Dibuja el marcador (puntos, récord, vidas y turno) | Pendiente |
-| `UI_PANTALLA_MENU` | Pantalla del menú principal | Pendiente |
-| `UI_PANTALLA_AYUDA` | Pantalla de instrucciones | Pendiente |
-| `UI_PANTALLA_PAUSA` | Pantalla de pausa | Pendiente |
-| `UI_MENSAJE_RESULTADO` | Mensaje al terminar una partida (victoria, empate o derrota) | Pendiente |
-| `UI_PANTALLA_GAMEOVER` | Pantalla de Game Over | Pendiente |
-| `UI_PANTALLA_VICTORIA` | Pantalla de victoria del juego | Pendiente |
-| Macros de pantalla (`M_*`) | Ampliación de los macros comunes | Pendiente |
+#### 2.5.1 Resumen de rutinas
+
+| Rutina | Entrada | Salida | Registros | Pila |
+|---|---|---|---|---|
+| `IN_LEER_TECLA` | — | `$v0` = tecla traducida | `$t0` | Hoja |
+| `IN_VACIAR_BUFER` | — | — | — | Hoja |
+| `UI_CELDA` (auxiliar) | `$a0` = índice 0-8 | imprime una casilla | `$t0`-`$t2` | Hoja |
+| `UI_DIBUJAR_TABLERO` | — | imprime el tablero 3 × 3 | `$s0`, `$s1`, `$t0` | `$ra`, `$s0`, `$s1` (12 bytes) |
+| `UI_DIBUJAR_HUD` | — | imprime puntos, récord, vidas y turno | `$t0`, `$t1` | `$ra` (4 bytes) |
+| `UI_PANTALLA_MENU` | — | imprime el menú principal | `$t0` | `$ra` (4 bytes) |
+| `UI_PANTALLA_AYUDA` | — | imprime las instrucciones y espera una tecla | — | `$ra` (4 bytes) |
+| `UI_PANTALLA_PAUSA` | — | imprime el mensaje de pausa | — | `$ra` (4 bytes) |
+| `UI_MENSAJE_RESULTADO` | — | imprime ganaste, empate o perdiste según `RESULTADO` | `$t0`, `$t1` | `$ra` (4 bytes) |
+| `UI_PANTALLA_GAMEOVER` | — | imprime la pantalla de Game Over | — | `$ra` (4 bytes) |
+| `UI_PANTALLA_VICTORIA` | — | imprime la pantalla de victoria | — | `$ra` (4 bytes) |
+| `UI_PIE_FINAL` (auxiliar) | — | imprime puntos finales, aviso de nuevo récord y opciones de reinicio | `$t0` | `$ra` (4 bytes) |
+
+#### 2.5.2 Macro de apoyo
+
+`M_PRINT_INT(%reg)` copia el registro recibido en `$a0` y llama a la syscall 1 para imprimir un entero. Se usa en el
+marcador, en el menú y en la pantalla final. Se define junto a los macros comunes de Jeferson (`M_PUSH`, `M_POP`,
+`M_PRINT`, `M_PRINT_CHAR`, `M_CLS`, `M_DELAY`), antes de su primer uso. Como todos esos macros, usa `$a0` y `$v0`.
+
+#### 2.5.3 `IN_LEER_TECLA` e `IN_VACIAR_BUFER`
+
+`IN_LEER_TECLA` espera un carácter con la syscall 12 y lo traduce al código que espera el módulo de estados:
+
+- Los saltos de línea (códigos 10 y 13) se descartan y se vuelve a leer. En MARS el usuario escribe la tecla y pulsa
+  ENTER, y ese ENTER llega como un carácter extra.
+- Las minúsculas se pasan a mayúscula (se resta 32 a los códigos 97-122).
+- Los dígitos `'1'`-`'9'` se convierten en los números 1-9 (se resta 48).
+- `J` se devuelve como 13 (ENTER) y `Q` como 27 (ESC), porque la consola de MARS no permite escribir esas teclas.
+- Cualquier otra letra se devuelve con su código ASCII (por ejemplo `P` = 80 y `R` = 82).
+
+Es un procedimiento hoja y solo usa `$t0`. `IN_VACIAR_BUFER` solo ejecuta `jr $ra`: la consola de MARS no permite vaciar el
+buffer y, como `IN_LEER_TECLA` ya descarta los saltos de línea, no hace falta. Se mantiene para cumplir el contrato
+entre módulos.
+
+#### 2.5.4 Tablero y marcador
+
+`UI_CELDA` recibe un índice 0-8 en `$a0`, lee `TABLERO[índice]` e imprime una casilla: `X` si vale 1, `O` si vale 2 y, si está
+vacía, su número de casilla (índice + 1). Así el jugador ve qué tecla corresponde a cada casilla.
+
+`UI_DIBUJAR_TABLERO` recorre las 3 filas con `$s0` (fila) y `$s1` (primer índice de la fila, fila × 3). Para cada fila
+imprime un margen, las tres casillas separadas por `SEP` (` | `) y un salto de línea; entre filas imprime `LINEA_H`
+(`---+---+---`), y no después de la última. Guarda `$ra`, `$s0` y `$s1` en la pila porque llama a `UI_CELDA`.
+
+`UI_DIBUJAR_HUD` imprime en una línea `PUNTOS`, `HIGHSCORE` (récord), `VIDAS` y el turno actual (`Jugador (X)` o `CPU (O)`
+según `TURNO`), usando `M_PRINT_INT` para los números.
+
+#### 2.5.5 Pantallas
+
+- `UI_PANTALLA_MENU`: limpia la consola, imprime el título, el marcador máximo (`HIGHSCORE`) y las opciones J, I y Q.
+- `UI_PANTALLA_AYUDA`: limpia la consola, imprime las instrucciones y espera una tecla antes de volver; después
+  `ST_PROC_MENU` redibuja el menú.
+- `UI_PANTALLA_PAUSA`: imprime el mensaje de pausa debajo del tablero actual, sin limpiar la pantalla.
+- `UI_MENSAJE_RESULTADO`: según `RESULTADO` imprime el mensaje de partida ganada, empatada o perdida.
+- `UI_PANTALLA_GAMEOVER` y `UI_PANTALLA_VICTORIA`: limpian la consola, imprimen su título y llaman a `UI_PIE_FINAL`, que
+  muestra los puntos finales, el aviso de nuevo récord (solo si `NUEVO_REC` vale 1) y las opciones para jugar de nuevo
+  o volver al menú.
+
+#### 2.5.6 Decisiones de diseño
+
+- **La vista no cambia el estado.** Todas las rutinas `UI_*` leen variables de Jeferson (`TABLERO`, `PUNTOS`, `HIGHSCORE`,
+  `VIDAS`, `TURNO`, `RESULTADO`, `NUEVO_REC`) pero nunca las escriben; así el estado solo lo modifican `ST_*` y `LG_*`.
+- **Los textos están en el `.data` de Jeferson.** La vista solo los imprime con `M_PRINT`, de modo que cambiar un mensaje
+  no obliga a tocar código de la vista.
+- **Las casillas vacías muestran su número**, para que no haga falta una leyenda aparte del tablero.
+- **Un solo archivo en la entrega.** La vista usa las macros, las constantes y las variables de los otros módulos, y en
+  MARS esos elementos no se comparten entre archivos; por eso va dentro de `src/gato.s`.
 
 ---
 
@@ -321,6 +378,10 @@ Dato propio de la lógica (`.data` de Daniel, a continuación de los de Jeferson
 
 Constantes propias (`.eqv`, no ocupan memoria): `LG_NUM_CASILLAS` = 9, `LG_NUM_LINEAS` = 8,
 `LG_VACIA` = 0, `LG_FICHA_X` = 1, `LG_FICHA_O` = 2.
+
+Datos que **lee** la vista (definidos por Jeferson; la vista no los modifica): `TABLERO`, `TURNO`, `RESULTADO`, `VIDAS`,
+`NUEVO_REC`, `PUNTOS`, `HIGHSCORE` y los mensajes `.asciiz` (`MSG_*`, `SEP`, `LINEA_H`, `CRLF`, `STR_CLS`). La vista no
+declara datos propios.
 
 **Coincidencia de códigos (decisión de diseño):** las fichas (1 = X, 2 = O) coinciden con
 `RES_JUGADOR` = 1 y `RES_CPU` = 2. Por eso `LG_VERIFICAR_FIN` guarda directamente la ficha
@@ -361,8 +422,10 @@ Marcos de pila de la lógica:
 | `LG_PROBAR_GANADA` | `$ra`, `$s0`, `$s1`, `$s2` | 16 |
 | `LG_PRIMERA_LIBRE` | `$ra`, `$s0`, `$s1` | 12 |
 | `LG_TURNO_CPU` | `$ra` | 4 |
+| `UI_DIBUJAR_TABLERO` | `$ra`, `$s0`, `$s1` | 12 |
+| `UI_DIBUJAR_HUD`, `UI_PANTALLA_MENU`, `UI_PANTALLA_AYUDA`, `UI_PANTALLA_PAUSA`, `UI_MENSAJE_RESULTADO`, `UI_PANTALLA_GAMEOVER`, `UI_PANTALLA_VICTORIA`, `UI_PIE_FINAL` | `$ra` | 4 |
 
-Las demás rutinas `LG_*` son procedimientos hoja (no llaman a otras) y no usan la pila.
+Las demás rutinas `LG_*`, además de `IN_LEER_TECLA`, `IN_VACIAR_BUFER` y `UI_CELDA`, son procedimientos hoja (no llaman a otras) y no usan la pila.
 
 ---
 
@@ -472,7 +535,7 @@ Pruebas ejecutadas: 25   Fallidas: 0
 -- program is finished running --
 ```
 
-### 4.4 Pruebas de sensibilidad (¿las pruebas detectan errores?)
+### 4.4 Pruebas de sensibilidad (�las pruebas detectan errores?)
 
 Se introdujeron fallos a propósito en una copia del código para comprobar que las pruebas los notan:
 
@@ -487,16 +550,43 @@ El último caso es una limitación conocida de las pruebas: por eso `LG_LIMPIAR_
 
 ### 4.5 Registro de errores encontrados y soluciones
 
-| # | Error detectado | Impacto | Solución aplicada |
+| # | Error detectado | Impacto | Soluci�n aplicada |
 |---|---|---|---|
-| 1 | Una tabla de conteo `.word` quedó declarada justo después de datos `.byte` sin `.align 2` (en el programa de prueba) | Desalineación de memoria: `lw` sobre una dirección no múltiplo de 4 detuvo la ejecución con excepción | Agregar `.align 2` antes de cada `.word` que siga a datos de 1 byte. En `gato.s` ya se respeta ese orden (bytes primero, `.align 2`, luego palabras). |
+| 1 | Una tabla de conteo `.word` quedó declarada justo después de datos `.byte` sin `.align 2` (en el programa de prueba) | Desalineaci�n de memoria: `lw` sobre una direcci�n no m�ltiplo de 4 detuvo la ejecuci�n con excepci�n | Agregar `.align 2` antes de cada `.word` que siga a datos de 1 byte. En `gato.s` ya se respeta ese orden (bytes primero, `.align 2`, luego palabras). |
+| 2 | Al ensamblar `gato.s` en MARS: `Symbol "IN_LEER_TECLA" not found in symbol table` (l�nea 175) | El programa no ensamblaba | MARS seguía usando la versión de `gato.s` sin el módulo de la vista (743 líneas): el archivo no se había reemplazado en el repo y MARS no recarga archivos cambiados desde fuera. Se reemplazó el archivo por la versión integrada (965 líneas), se comprobó con `findstr /n "IN_LEER_TECLA:"` y se cerró y volvió a abrir en MARS. |
+| 3 | Un commit de `gato_kim.asm` se hizo con el archivo vacío (`0 insertions`) | El m�dulo de la vista no quedaba en el historial | El archivo se había creado sin contenido. Se copió el código completo, se verificó el tamaño (245 líneas) antes de hacer un nuevo commit y recién entonces se subió. |
 
 No se registraron otros errores en la lógica durante las pruebas descritas.
 
 #### Riesgos conocidos (sin error observado)
 
-- `LG_COLOCAR_FICHA` no valida: con `$a0` = 10 escribiría un byte después de `TABLERO` (sobre `TURNO`).
-  Es seguro mientras se llame después de `LG_VALIDAR_JUGADA`, como hace `ST_JUGADA_JUGADOR`.
+- `LG_COLOCAR_FICHA` no valida: con `$a0` = 10 escribiría un byte despu�s de `TABLERO` (sobre `TURNO`).
+  Es seguro mientras se llame despu�s de `LG_VALIDAR_JUGADA`, como hace `ST_JUGADA_JUGADOR`.
 - `LG_PROBAR_GANADA` supone `RESULTADO` = 0 al entrar y lo deja en 0; `ST_JUGADA_JUGADOR` solo llama a
-  `LG_TURNO_CPU` cuando la partida sigue en curso, así que se cumple.
+  `LG_TURNO_CPU` cuando la partida sigue en curso, as� que se cumple.
+- `MODO_PRUEBA` est� en 1 para poder probar los estados; debe ponerse en 0 en el `.data` antes de entregar.
+- La vista depende de que `ST_*` y `LG_*` mantengan los valores de `TABLERO` (0, 1, 2), `TURNO` (1, 2) y `RESULTADO` (0-3):
+  si cambia esa codificaci�n, `UI_CELDA`, `UI_DIBUJAR_HUD` y `UI_MENSAJE_RESULTADO` deben revisarse.
 - La estrategia de la CPU no es perfecta: una "horquilla" (dos amenazas a la vez) puede ganarle. Para modificar la dificultad se puede cambiar el orden de preferencia en `LG_ORDEN`, que solo afecta la jugada de relleno; para una CPU más fácil de vencer también puede quitarse el paso de bloqueo en `LG_TURNO_CPU`.
+
+### 4.6 Pruebas de la vista (manuales)
+
+La vista solo imprime texto en la consola de MARS, por lo que se prueba jugando y comparando lo que aparece en la
+ventana *Run I/O* con lo esperado. Cada prueba se hace escribiendo la tecla y pulsando ENTER. Con `MODO_PRUEBA` = 1 las
+teclas W, L y D fuerzan victoria, derrota y empate sin jugar una partida completa.
+
+| # | Acci�n | Resultado esperado | Resultado obtenido |
+|---|---|---|---|
+| 1 | Ensamblar `src/gato.s` (F3) | `Assemble: operation completed successfully` | Correcto (ensambl� sin errores tras reemplazar el archivo; ver error 2) |
+| 2 | Ejecutar (F5) | Se muestra el men� con el t�tulo, el marcador m�ximo en 0 y las opciones J, I y Q | Por registrar |
+| 3 | `j` | Se muestra el marcador (puntos 0, vidas 3, turno del jugador) y el tablero con los números 1 a 9 | Por registrar |
+| 4 | `5` | Aparece X en el centro y luego la O de la CPU | Por registrar |
+| 5 | Elegir una casilla ocupada | Se ignora: el tablero no cambia | Por registrar |
+| 6 | `p` y luego `p` | Aparece el mensaje de pausa; al repetir vuelve el tablero | Por registrar |
+| 7 | `i` desde el men� | Se muestran las instrucciones y al pulsar una tecla vuelve el men� | Por registrar |
+| 8 | `w` | Mensaje de partida ganada, +10 puntos en el marcador | Por registrar |
+| 9 | `d` | Mensaje de empate, +5 puntos | Por registrar |
+| 10 | `l` tres veces | Mensaje de partida perdida, una vida menos cada vez y, al llegar a 0, pantalla de Game Over | Por registrar |
+| 11 | Llegar a 50 puntos con `w` | Pantalla de victoria y, si se superó el r�cord, el aviso de nuevo r�cord | Por registrar |
+| 12 | `j` o `r` en la pantalla final | Empieza un juego nuevo con puntos y vidas reiniciados y el r�cord conservado | Por registrar |
+| 13 | `q` | Vuelve al men�; `q` desde el men� termina el programa | Por registrar |
