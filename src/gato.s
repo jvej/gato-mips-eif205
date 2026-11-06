@@ -671,7 +671,7 @@ lg_vf_lineas:
     bne  $t4, $t6, lg_vf_sig    # 1a distinta de 3a: no hay linea
     sb   $t4, RESULTADO         # linea completa: gana quien tenga esa ficha
     sb   $t2, WIN_LINE
-    jr   $rara
+    jr   $ra
 lg_vf_sig:
     addi $t0, $t0, 3            # siguiente linea (cada una ocupa 3 bytes)
     addi $t2, $t2, 1            # numero de linea + 1
