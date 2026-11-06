@@ -441,6 +441,7 @@ stp_fin:
 ST_FIN_PARTIDA:
     M_PUSH($ra)
     jal  ST_ACTUALIZAR_PUNTOS
+    jal  ST_BEEP_RESULTADO
     jal  ST_REDIBUJAR           # deja ver la jugada final
     lb   $t0, ESTADO
     li   $t1, EST_JUEGO
@@ -460,6 +461,51 @@ sf_final:
 sf_go:
     jal  UI_PANTALLA_GAMEOVER
 sf_fin:
+    M_POP($ra)
+    jr   $ra
+    
+    # ST_BEEP_RESULTADO
+# Reproduce un sonido segun el resultado de la partida.
+# Syscall 31: MIDI Out
+
+ST_BEEP_RESULTADO:
+    M_PUSH($ra)
+
+    lb   $t0, RESULTADO
+
+    # Si gana el jugador: sonido agudo
+    li   $t1, RES_JUGADOR
+    beq  $t0, $t1, sb_victoria
+
+    # Si empata: sonido medio
+    li   $t1, RES_EMPATE
+    beq  $t0, $t1, sb_empate
+
+    # Si pierde: sonido grave
+    li   $t1, RES_CPU
+    beq  $t0, $t1, sb_derrota
+
+    j    sb_fin
+
+sb_victoria:
+    li   $a0, 90
+    j    sb_reproducir
+
+sb_empate:
+    li   $a0, 75
+    j    sb_reproducir
+
+sb_derrota:
+    li   $a0, 50
+
+sb_reproducir:
+    li   $a1, 300
+    li   $a2, 10
+    li   $a3, 100
+    li   $v0, 31
+    syscall
+
+sb_fin:
     M_POP($ra)
     jr   $ra
 
