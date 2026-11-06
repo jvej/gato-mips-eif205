@@ -590,3 +590,10 @@ teclas W, L y D fuerzan victoria, derrota y empate sin jugar una partida complet
 | 11 | Llegar a 50 puntos con `w` | Pantalla de victoria y, si se superÃ³ el récord, el aviso de nuevo récord | Por registrar |
 | 12 | `j` o `r` en la pantalla final | Empieza un juego nuevo con puntos y vidas reiniciados y el récord conservado | Por registrar |
 | 13 | `q` | Vuelve al menú; `q` desde el menú termina el programa | Por registrar |
+| 14 | Ganar una partida con W | Se reproduce un sonido agudo al finalizar la partida | Correcto |
+| 15 | Empatar una partida con D | Se reproduce un sonido medio al finalizar la partida | Correcto |
+| 16 | Perder una partida con L | Se reproduce un sonido grave al finalizar la partida | Correcto |
+| 17 | Ganar con una línea horizontal | Las tres casillas ganadoras se resaltan con un asterisco | Correcto |
+| 18 | Ganar con una línea vertical | Las tres casillas ganadoras se resaltan con un asterisco | Correcto |
+| 19 | Ganar con una diagonal | Las tres casillas ganadoras se resaltan con un asterisco | Correcto |
+| 20 | Iniciar una nueva partida | El tablero se limpia y desaparece el resaltado | Correcto |
