@@ -602,20 +602,25 @@ LG_ORDEN:     .byte 5,1,3,7,9,2,4,6,8
 # Entrada: ninguna   Salida: ninguna
 # Usa: $t0-$t3 (procedimiento hoja, no necesita guardar $ra)
 LG_LIMPIAR_TABLERO:
-    la   $t0, TABLERO           # $t0 = direccion de la casilla 0
-    li   $t1, 0                 # $t1 = contador i = 0
-    li   $t3, LG_NUM_CASILLAS   # $t3 = 9 (limite del ciclo)
-    li   $t0, 255
-    sb   $t0, WIN_LINE
+    la   $t0, TABLERO           # direccion de la casilla 0
+    li   $t1, 0                 # contador i = 0
+    li   $t3, LG_NUM_CASILLAS   # limite del ciclo (9)
+
+    li   $t2, 255
+    sb   $t2, WIN_LINE          # limpiar linea ganadora
+
 lg_lt_bucle:
     sb   $zero, 0($t0)          # TABLERO[i] = 0
-    addi $t0, $t0, 1            # avanza a la siguiente casilla (1 byte)
-    addi $t1, $t1, 1            # i = i + 1
-    blt  $t1, $t3, lg_lt_bucle  # si i < 9, repite
+    addi $t0, $t0, 1            # siguiente casilla
+    addi $t1, $t1, 1            # i++
+    blt  $t1, $t3, lg_lt_bucle
+
     li   $t2, 1
     sb   $t2, TURNO             # TURNO = 1 (jugador)
+
     li   $t2, RES_CURSO
-    sb   $t2, RESULTADO         # RESULTADO = 0 (partida en curso)
+    sb   $t2, RESULTADO         # partida en curso
+
     jr   $ra
 
 # LG_VALIDAR_JUGADA: $a0 = casilla (1-9)
