@@ -121,6 +121,7 @@
 .data
 # --- variables de 1 byte (desplazamientos 0 - 15 desde TABLERO) ---
 TABLERO:      .byte 0,0,0,0,0,0,0,0,0   # 0 vacia, 1 = X (jugador), 2 = O (CPU)
+WIN_LINE:     .byte 255   # 0-7 indica la linea ganadora; 255 = ninguna
 TURNO:        .byte 1                   # 1 jugador, 2 CPU
 ESTADO:       .byte 0                   # EST_MENU .. EST_VICTORIA
 RESULTADO:    .byte 0                   # RES_CURSO .. RES_EMPATE
@@ -604,6 +605,8 @@ LG_LIMPIAR_TABLERO:
     la   $t0, TABLERO           # $t0 = direccion de la casilla 0
     li   $t1, 0                 # $t1 = contador i = 0
     li   $t3, LG_NUM_CASILLAS   # $t3 = 9 (limite del ciclo)
+    li   $t0, 255
+    sb   $t0, WIN_LINE
 lg_lt_bucle:
     sb   $zero, 0($t0)          # TABLERO[i] = 0
     addi $t0, $t0, 1            # avanza a la siguiente casilla (1 byte)
@@ -667,7 +670,8 @@ lg_vf_lineas:
     bne  $t4, $t5, lg_vf_sig    # 1a distinta de 2a: no hay linea
     bne  $t4, $t6, lg_vf_sig    # 1a distinta de 3a: no hay linea
     sb   $t4, RESULTADO         # linea completa: gana quien tenga esa ficha
-    jr   $ra
+    sb   $t2, WIN_LINE
+    jr   $rara
 lg_vf_sig:
     addi $t0, $t0, 3            # siguiente linea (cada una ocupa 3 bytes)
     addi $t2, $t2, 1            # numero de linea + 1
