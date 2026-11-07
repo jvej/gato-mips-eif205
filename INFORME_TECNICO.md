@@ -362,13 +362,23 @@ base `0x10010000`):
 
 | Etiqueta | Tamaño | Offset | Dirección | Contenido |
 |---|---|---|---|---|
-| `TABLERO` | 9 bytes | +0 … +8 | `0x10010000` | Casillas 0-8: 0 vacía, 1 = X (jugador), 2 = O (CPU) |
-| `TURNO` | 1 byte | +9 | `0x10010009` | 1 jugador, 2 CPU |
-| `ESTADO` | 1 byte | +10 | `0x1001000A` | Estado de la máquina de estados |
-| `RESULTADO` | 1 byte | +11 | `0x1001000B` | 0 en curso, 1 gana jugador, 2 gana CPU, 3 empate |
-| `VIDAS`, `NUEVO_REC`, `SALIR`, `MODO_PRUEBA` | 1 byte c/u | +12 … +15 | | Variables de Jeferson |
-| `PUNTOS`, `HIGHSCORE` | 1 word c/u | +16, +20 | `0x10010010`, `0x10010014` | Alineadas a 4 bytes con `.align 2` |
-| `LINEAS` | 24 bytes | +24 | `0x10010018` | 8 líneas ganadoras × 3 índices de casilla (0-8) |
+| `TABLERO` | 9 bytes | +0 … +8 | `0x10010000` – `0x10010008` | Casillas 0-8: 0 vacía, 1 = X (jugador), 2 = O (CPU) |
+| `WIN_LINE` | 1 byte | +9 | `0x10010009` | Línea ganadora 0-7 para resaltarla; 255 = ninguna (agregada por la vista) |
+| `TURNO` | 1 byte | +10 | `0x1001000A` | 1 jugador, 2 CPU |
+| `ESTADO` | 1 byte | +11 | `0x1001000B` | 0 menú, 1 juego, 2 pausa, 3 game over, 4 victoria |
+| `RESULTADO` | 1 byte | +12 | `0x1001000C` | 0 en curso, 1 gana jugador, 2 gana CPU, 3 empate |
+| `VIDAS` | 1 byte | +13 | `0x1001000D` | Vidas restantes (inicia en 3) |
+| `NUEVO_REC` | 1 byte | +14 | `0x1001000E` | 1 si en este juego se superó el récord |
+| `SALIR` | 1 byte | +15 | `0x1001000F` | 1 = terminar el programa |
+| `MODO_PRUEBA` | 1 byte | +16 | `0x10010010` | 1 = teclas W/L/D fuerzan el resultado |
+| *(relleno)* | 3 bytes | +17 … +19 | `0x10010011` – `0x10010013` | Insertados por `.align 2` |
+| `PUNTOS` | 1 word | +20 | `0x10010014` | Puntos del juego actual |
+| `HIGHSCORE` | 1 word | +24 | `0x10010018` | Marcador máximo; solo se pone en 0 al abrir el programa |
+| `LINEAS` | 24 bytes | +28 … +51 | `0x1001001C` – `0x10010033` | 8 líneas ganadoras × 3 índices de casilla (0-8) |
+
+Con `WIN_LINE` las variables de 1 byte pasan de 16 a 17. Por eso `.align 2` agrega 3 bytes de relleno y `PUNTOS` queda en
+`0x10010014`, que es múltiplo de 4. Sin la directiva, `PUNTOS` caería en `0x10010011` y `lw`/`sw` producirían una excepción
+de dirección no alineada. Las direcciones se pueden comprobar en MARS con *Settings → Show Labels Window* después de ensamblar.
 
 Dato propio de la lógica (`.data` de Daniel, a continuación de los de Jeferson):
 
@@ -410,7 +420,7 @@ ganadora en `RESULTADO`, y `LG_PROBAR_GANADA` compara `RESULTADO` con la ficha.
 
 Con la configuración por defecto de MARS, el código (`.text`) empieza en `0x00400000`, los datos (`.data`) en
 `0x10010000` y la pila (`$sp`) empieza cerca de `0x7FFFEFFC` y **crece hacia direcciones menores**. En el segmento de
-datos se declaran primero los bytes (16 en total, desde `TABLERO`), luego `.align 2` y las palabras, para que
+datos se declaran primero los bytes (17 en total, desde `TABLERO`), luego `.align 2` y las palabras, para que
 `PUNTOS` y `HIGHSCORE` queden alineadas a 4 bytes (obligatorio para `lw` / `sw`); después van la tabla `LINEAS` y los
 mensajes `.asciiz`.
 
