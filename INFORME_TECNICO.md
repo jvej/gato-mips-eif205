@@ -615,24 +615,24 @@ teclas W, L y D fuerzan victoria, derrota y empate sin jugar una partida complet
 | # | Acción | Resultado esperado | Resultado obtenido |
 |---|---|---|---|
 | 1 | Ensamblar `src/gato.s` (F3) | `Assemble: operation completed successfully` | Correcto (ensambló sin errores tras reemplazar el archivo; ver error 2) |
-| 2 | Ejecutar (F5) | Se muestra el menú con el título, el marcador máximo en 0 y las opciones J, I y Q | Por registrar |
+| 2 | Ejecutar (F5) | Se muestra el menú con el título, el marcador máximo en 0 y las opciones J, I y Q | Correcto |
 | 3 | `j` | Se muestra el marcador (puntos 0, vidas 3, turno del jugador) y el tablero con los números 1 a 9 | Correcto |
 | 4 | `5` | Aparece X en el centro y luego la O de la CPU | Correcto (la CPU jugó en la casilla 1) |
 | 5 | Elegir una casilla ocupada | El tablero no cambia y se muestra `>> Esa casilla ya esta ocupada. Elige otra.` | Correcto |
-| 6 | `p` y luego `p` | Aparece el mensaje de pausa; al repetir vuelve el tablero | Por registrar |
-| 7 | `i` desde el menú | Se muestran las instrucciones y al pulsar una tecla vuelve el menú | Por registrar |
+| 6 | `p` y luego `p` | Aparece el mensaje de pausa; al repetir vuelve el tablero | Correcto |
+| 7 | `i` desde el menú | Se muestran las instrucciones y al pulsar una tecla vuelve el menú | Correcto |
 | 8 | `w` | Mensaje de partida ganada, +10 puntos en el marcador | Correcto |
 | 9 | `d` | Mensaje de empate, +5 puntos | Correcto |
-| 10 | `l` tres veces | Mensaje de partida perdida, una vida menos cada vez y, al llegar a 0, pantalla de Game Over | Por registrar |
-| 11 | Llegar a 50 puntos con `w` | Pantalla de victoria y, si se superó el récord, el aviso de nuevo récord | Por registrar |
-| 12 | `j` o `r` en la pantalla final | Empieza un juego nuevo con puntos y vidas reiniciados y el récord conservado | Por registrar |
-| 13 | `q` | Vuelve al menú; `q` desde el menú termina el programa | Por registrar |
+| 10 | `l` tres veces | Mensaje de partida perdida, una vida menos cada vez y, al llegar a 0, pantalla de Game Over | Correcto |
+| 11 | Llegar a 50 puntos con `w` | Pantalla de victoria y, si se superó el récord, el aviso de nuevo récord | Correcto |
+| 12 | `j` o `r` en la pantalla final | Empieza un juego nuevo con puntos y vidas reiniciados y el récord conservado | Correcto |
+| 13 | `q` | Vuelve al menú; `q` desde el menú termina el programa | Correcto |
 | 14 | Ganar una partida con W | Se reproduce un sonido agudo al finalizar la partida | Correcto |
 | 15 | Empatar una partida con D | Se reproduce un sonido medio al finalizar la partida | Correcto |
 | 16 | Perder una partida con L | Se reproduce un sonido grave al finalizar la partida | Correcto |
 | 17 | Ganar con una línea horizontal | Las tres casillas ganadoras se resaltan con un asterisco | Correcto tras corregir el error 4 (jugadas 1, 9, 7, 8: fila inferior `*X*\|*X*\|*X*`) |
-| 18 | Ganar con una línea vertical | Las tres casillas ganadoras se resaltan con un asterisco | Por registrar (repetir tras corregir el error 4) |
-| 19 | Ganar con una diagonal | Las tres casillas ganadoras se resaltan con un asterisco | Por registrar (repetir tras corregir el error 4; perder con 2, 4, 3 da la diagonal 1-5-9 de la CPU) |
+| 18 | Ganar con una línea vertical | Las tres casillas ganadoras se resaltan con un asterisco | Correcto tras corregir el error 4 |
+| 19 | Ganar con una diagonal | Las tres casillas ganadoras se resaltan con un asterisco | Correcto tras corregir el error 4 |
 | 20 | Iniciar una nueva partida | El tablero se limpia y desaparece el resaltado | Correcto |
 | 21 | Terminar en empate | No se resalta ninguna casilla | Correcto |
 | 22 | `w`, `l` o `d` en modo de prueba | No se resalta ninguna casilla (no hay línea real) | Correcto |
