@@ -165,6 +165,8 @@ MSG_HUD4:     .asciiz "   TURNO: "
 MSG_TJ:       .asciiz "Jugador (X)"
 MSG_TC:       .asciiz "CPU (O)"
 MSG_ADIOS:    .asciiz "Hasta luego!\n"
+MSG_OCUPADA:  .asciiz "\n>> Esa casilla ya esta ocupada. Elige otra.\n"
+MSG_TECLA_INV:.asciiz "\n>> Tecla no valida. Usa 1-9, P, R o Q.\n"
 
 .text
 .globl main
@@ -371,18 +373,19 @@ spf_fin:
 
 # ST_JUGADA_JUGADOR: $a0 = tecla. Si es 1-9 y la casilla esta libre,
 # juega el jugador y despues el CPU; si la partida termina, la cierra.
+# Si la tecla no es 1-9 o la casilla esta ocupada, avisa al jugador.
 # Usa $s0 (tecla); lo guarda en la pila.
 ST_JUGADA_JUGADOR:
     M_PUSH($ra)
     M_PUSH($s0)
     move $s0, $a0
     li   $t0, 1
-    blt  $s0, $t0, sjj_ret
+    blt  $s0, $t0, sjj_tecla_inv
     li   $t0, 9
-    bgt  $s0, $t0, sjj_ret
+    bgt  $s0, $t0, sjj_tecla_inv
     move $a0, $s0
     jal  LG_VALIDAR_JUGADA
-    bnez $v0, sjj_ret           # casilla ocupada: se ignora
+    bnez $v0, sjj_ocupada       # casilla ocupada: se avisa
     move $a0, $s0
     li   $a1, 1
     jal  LG_COLOCAR_FICHA
@@ -401,12 +404,24 @@ ST_JUGADA_JUGADOR:
     bnez $t0, sjj_fin
     jal  ST_REDIBUJAR
     j    sjj_ret
+sjj_ocupada:
+    jal  ST_REDIBUJAR
+    M_PRINT(MSG_OCUPADA)
+    j    sjj_ret
+sjj_tecla_inv:
+    jal  ST_REDIBUJAR
+    M_PRINT(MSG_TECLA_INV)
+    j    sjj_ret
 sjj_fin:
     jal  ST_FIN_PARTIDA
 sjj_ret:
     M_POP($s0)
     M_POP($ra)
     jr   $ra
+
+# ST_TECLA_PRUEBA: solo MODO_PRUEBA...                  
+
+# ST_TECLA_PRUEBA: solo MODO_PRUEBA. W = gana, L = pierde, D = empata.  ? NO tocar
 
 # ST_TECLA_PRUEBA: solo MODO_PRUEBA. W = gana, L = pierde, D = empata.
 # Entrada $a0 = tecla. Sale $v0 = 1 si la tecla fue una de esas (y ya
