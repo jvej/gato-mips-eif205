@@ -168,7 +168,8 @@ MSG_ADIOS:    .asciiz "Hasta luego!\n"
 MSG_OCUPADA:  .asciiz "\n>> Esa casilla ya esta ocupada. Elige otra.\n"
 MSG_TECLA_INV:.asciiz "\n>> Tecla no valida. Usa 1-9, P, R o Q.\n"
 MSG_CPU_JUGO: .asciiz "\n>> El CPU jugo en la casilla "
-
+MSG_HUD5:     .asciiz "META: faltan "
+MSG_HUD6:     .asciiz " puntos para llegar a 50"
 .text
 .globl main
 
@@ -424,10 +425,6 @@ sjj_ret:
     M_POP($s0)
     M_POP($ra)
     jr   $ra
-
-# ST_TECLA_PRUEBA: solo MODO_PRUEBA...                  
-
-# ST_TECLA_PRUEBA: solo MODO_PRUEBA. W = gana, L = pierde, D = empata.  ? NO tocar
 
 # ST_TECLA_PRUEBA: solo MODO_PRUEBA. W = gana, L = pierde, D = empata.
 # Entrada $a0 = tecla. Sale $v0 = 1 si la tecla fue una de esas (y ya
@@ -1011,6 +1008,16 @@ UI_DIBUJAR_HUD:
 hud_cpu:
     M_PRINT(MSG_TC)
 hud_fin:
+    M_PRINT(CRLF)
+    M_PRINT(MSG_HUD5)
+    lw   $t0, PUNTOS
+    li   $t1, PTS_META
+    sub  $t0, $t1, $t0          # faltan = META - PUNTOS
+    bgez $t0, hud_meta
+    li   $t0, 0                 # si ya paso la meta, muestra 0
+hud_meta:
+    M_PRINT_INT($t0)
+    M_PRINT(MSG_HUD6)
     M_PRINT(CRLF)
     M_POP($ra)
     jr   $ra
