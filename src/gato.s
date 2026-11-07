@@ -121,7 +121,7 @@
 .data
 # --- variables de 1 byte (desplazamientos 0 - 15 desde TABLERO) ---
 TABLERO:      .byte 0,0,0,0,0,0,0,0,0   # 0 vacia, 1 = X (jugador), 2 = O (CPU)
-WIN_LINE:     .byte 255   # 0-7 indica la linea ganadora; 255 = ninguna
+   WIN_LINE:     .byte -1    # 0-7 indica la linea ganadora; -1 (0xFF) = ninguna
 TURNO:        .byte 1                   # 1 jugador, 2 CPU
 ESTADO:       .byte 0                   # EST_MENU .. EST_VICTORIA
 RESULTADO:    .byte 0                   # RES_CURSO .. RES_EMPATE
