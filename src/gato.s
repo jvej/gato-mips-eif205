@@ -141,8 +141,8 @@ LINEAS:       .byte 0,1,2, 3,4,5, 6,7,8, 0,3,6, 1,4,7, 2,5,8, 0,4,8, 2,4,6
 # --- mensajes (terminan en NUL con .asciiz) ---
 STR_CLS:      .asciiz "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
 CRLF:         .asciiz "\n"
-SEP:          .asciiz " | "
-LINEA_H:      .asciiz "---+---+---\n"
+SEP:          .asciiz "|"
+LINEA_H:      .asciiz " ---+---+---\n"
 MSG_TITULO:   .asciiz "=== JUEGO DEL GATO (TRES EN RAYA) ===\n\n"
 MSG_MENU:     .asciiz "  J = Jugar\n  I = Instrucciones\n  Q = Salir\n\n"
 MSG_RECORD:   .asciiz "Marcador maximo: "
@@ -853,26 +853,88 @@ IN_VACIAR_BUFER:
 #  INTERFAZ: TABLERO Y HUD                                      [KIM]
 # ======================================================================
 
-# UI_CELDA: imprime UNA casilla. Entrada: $a0 = indice 0-8
+# UI_CELDA: imprime UNA casilla en 3 caracteres. Entrada: $a0 = indice 0-8
 #   vacia -> el numero de casilla (1-9), asi el jugador sabe que teclear
-#   1 -> 'X'     2 -> 'O'            Usa: $t0-$t2 (hoja)
+#   1 -> 'X'     2 -> 'O'
+#   Normal: " X "      En la linea ganadora: "*X*"
+# Guarda $ra, $s2 (caracter) y $s3 (indice) en la pila.
 UI_CELDA:
+    M_PUSH($ra)
+    M_PUSH($s2)
+    M_PUSH($s3)
+    move $s3, $a0               # $s3 = indice de la casilla
     la   $t0, TABLERO
-    add  $t0, $t0, $a0
+    add  $t0, $t0, $s3
     lb   $t1, 0($t0)
     beqz $t1, uc_vacia
     li   $t2, 1
     beq  $t1, $t2, uc_x
-    li   $a0, 79                # 'O'
-    j    uc_print
+    li   $s2, 79                # 'O'
+    j    uc_borde
 uc_x:
-    li   $a0, 88                # 'X'
-    j    uc_print
+    li   $s2, 88                # 'X'
+    j    uc_borde
 uc_vacia:
-    addi $a0, $a0, 49           # indice 0 -> '1', etc.
+    addi $s2, $s3, 49           # indice 0 -> '1', etc.
+uc_borde:
+    move $a0, $s3
+    jal  UI_ES_GANADORA         # $v0 = 1 si la casilla se resalta
+    li   $t5, 32                # borde normal: espacio
+    beqz $v0, uc_print
+    li   $t5, 42                # borde resaltado: '*'
 uc_print:
+    move $a0, $t5               # borde izquierdo
     li   $v0, 11
     syscall
+    move $a0, $s2               # ficha o numero
+    li   $v0, 11
+    syscall
+    move $a0, $t5               # borde derecho
+    li   $v0, 11
+    syscall
+    M_POP($s3)
+    M_POP($s2)
+    M_POP($ra)
+    jr   $ra
+
+# UI_ES_GANADORA: $a0 = indice 0-8. Sale $v0 = 1 si la casilla pertenece
+# a la linea ganadora, 0 si no.
+# No basta con leer WIN_LINE: LG_PROBAR_GANADA (turno del CPU) llama a
+# LG_VERIFICAR_FIN con jugadas provisionales y deja WIN_LINE con lineas
+# que no existen, y con MODO_PRUEBA (W/L) RESULTADO se fuerza sin linea.
+# Por eso se exige: RESULTADO = 1 o 2, WIN_LINE entre 0 y 7, y que las
+# 3 casillas de esa linea tengan de verdad la ficha ganadora.
+# Usa: $t0-$t6 (procedimiento hoja, solo lee variables)
+UI_ES_GANADORA:
+    li   $v0, 0
+    lb   $t0, RESULTADO         # ficha ganadora (1 = X, 2 = O)
+    li   $t1, RES_JUGADOR
+    beq  $t0, $t1, ueg_linea
+    li   $t1, RES_CPU
+    bne  $t0, $t1, ueg_fin      # en curso o empate: nada que resaltar
+ueg_linea:
+    lbu  $t1, WIN_LINE          # lbu: 0xFF se lee como 255, no como -1
+    li   $t2, 8
+    bgeu $t1, $t2, ueg_fin      # 255 (o basura) = ninguna linea
+    mul  $t1, $t1, 3            # cada linea ocupa 3 bytes en LINEAS
+    la   $t2, LINEAS
+    add  $t2, $t2, $t1          # $t2 = &LINEAS[3 * WIN_LINE]
+    la   $t3, TABLERO
+    li   $t4, 0                 # $t4 = 1 si $a0 esta en la linea
+    li   $t6, 3                 # contador de casillas de la linea
+ueg_bucle:
+    lb   $t1, 0($t2)            # indice de la casilla de la linea
+    add  $t5, $t3, $t1
+    lb   $t5, 0($t5)            # contenido de esa casilla
+    bne  $t5, $t0, ueg_fin      # no es la ficha ganadora: linea falsa
+    bne  $t1, $a0, ueg_sig
+    li   $t4, 1                 # la casilla pedida esta en la linea
+ueg_sig:
+    addi $t2, $t2, 1
+    addi $t6, $t6, -1
+    bnez $t6, ueg_bucle
+    move $v0, $t4
+ueg_fin:
     jr   $ra
 
 # UI_DIBUJAR_TABLERO: dibuja el tablero 3x3 con separadores
