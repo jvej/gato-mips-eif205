@@ -167,6 +167,7 @@ MSG_TC:       .asciiz "CPU (O)"
 MSG_ADIOS:    .asciiz "Hasta luego!\n"
 MSG_OCUPADA:  .asciiz "\n>> Esa casilla ya esta ocupada. Elige otra.\n"
 MSG_TECLA_INV:.asciiz "\n>> Tecla no valida. Usa 1-9, P, R o Q.\n"
+MSG_CPU_JUGO: .asciiz "\n>> El CPU jugo en la casilla "
 
 .text
 .globl main
@@ -396,13 +397,18 @@ ST_JUGADA_JUGADOR:
     sb   $t0, TURNO
     jal  ST_REDIBUJAR
     M_DELAY(300)
-    jal  LG_TURNO_CPU
+        jal  LG_TURNO_CPU
+    move $s0, $v0               # casilla que jugo el CPU (la tecla ya no se usa)
     jal  LG_VERIFICAR_FIN
     li   $t0, 1
     sb   $t0, TURNO
     lb   $t0, RESULTADO
     bnez $t0, sjj_fin
     jal  ST_REDIBUJAR
+    beqz $s0, sjj_ret           # 0 = el CPU no pudo jugar
+    M_PRINT(MSG_CPU_JUGO)
+    M_PRINT_INT($s0)
+    M_PRINT(CRLF)
     j    sjj_ret
 sjj_ocupada:
     jal  ST_REDIBUJAR
