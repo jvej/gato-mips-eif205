@@ -128,7 +128,7 @@ RESULTADO:    .byte 0                   # RES_CURSO .. RES_EMPATE
 VIDAS:        .byte 3
 NUEVO_REC:    .byte 0                   # 1 si en este juego se supero el record
 SALIR:        .byte 0                   # 1 = terminar el programa
-MODO_PRUEBA:  .byte 1                   # 1 = teclas W/L/D fuerzan resultado (poner 0 al entregar)
+MODO_PRUEBA:  .byte 0                   # 1 = teclas W/L/D fuerzan resultado (poner 0 al entregar)
 
 # --- variables de 1 palabra (alineadas a 4 bytes) ---
 .align 2
