@@ -1,10 +1,10 @@
 # Juego del Gato - MIPS32 (MARS)
 
-## Descripción
+## DescripciÃ³n
 
 Proyecto desarrollado en lenguaje ensamblador MIPS32 utilizando MARS para el curso EIF205.
 
-El juego consiste en una versión de tres en raya donde el jugador utiliza X y compite contra la computadora, que utiliza O.
+El juego consiste en una versiÃ³n de tres en raya donde el jugador utiliza X y compite contra la computadora, que utiliza O.
 
 ## Integrantes
 
@@ -18,20 +18,20 @@ El juego consiste en una versión de tres en raya donde el jugador utiliza X y co
 - Java instalado.
 
 
-## Cómo ejecutar el proyecto
+## CÃ³mo ejecutar el proyecto
 
 1. Abrir MARS.
-2. Seleccionar File ? Open.
+2. Seleccionar File â†’ Open.
 3. Abrir el archivo `src/gato.s`.
 4. Presionar Assemble (F3).
 5. Presionar Run (F5).
 6. Utilizar la consola Run I/O para ingresar las teclas.
 
-## Cómo jugar
+## CÃ³mo jugar
 
 El jugador utiliza X y comienza la partida.
 
-La computadora utiliza O y responde automáticamente después de cada jugada.
+La computadora utiliza O y responde automÃ¡ticamente despuÃ©s de cada jugada.
 
 El tablero utiliza las posiciones del 1 al 9:
 
@@ -43,15 +43,15 @@ El tablero utiliza las posiciones del 1 al 9:
  7 | 8 | 9
 ```
 
-El jugador debe ingresar el número correspondiente a la casilla donde desea colocar su ficha.
+El jugador debe ingresar el nÃºmero correspondiente a la casilla donde desea colocar su ficha.
 
 ## Teclas
 
-| Tecla | Función |
+| Tecla | FunciÃ³n |
 |---|---|
 | J | Iniciar juego |
 | I | Mostrar instrucciones |
-| Q | Salir o volver al menú |
+| Q | Salir o volver al menÃº |
 | 1-9 | Seleccionar casilla |
 | P | Pausar partida |
 | R | Reiniciar partida |
@@ -59,7 +59,7 @@ El jugador debe ingresar el número correspondiente a la casilla donde desea colo
 | L | Forzar derrota en modo prueba |
 | D | Forzar empate en modo prueba |
 
-Las teclas W, L y D solo están disponibles cuando `MODO_PRUEBA = 1`.
+Las teclas W, L y D solo estÃ¡n disponibles cuando `MODO_PRUEBA = 1`.
 
 ## Sistema de puntos y vidas
 
@@ -73,7 +73,7 @@ Las teclas W, L y D solo están disponibles cuando `MODO_PRUEBA = 1`.
 ## Archivos principales
 
 - `src/gato.s`: programa integrado que se ejecuta en MARS.
-- `src/gato_kim.asm`: módulo de entrada e interfaz de Kim.
-- `pruebas/prueba_logica.asm`: pruebas de la lógica.
-- `INFORME_TECNICO.md`: documentación técnica del proyecto.
-- `docs/guion_presentacion_kim.md`: guion de presentación de Kim.
+- `src/gato_kim.asm`: mÃ³dulo de entrada e interfaz de Kim.
+- `pruebas/prueba_logica.asm`: pruebas de la lÃ³gica.
+- `INFORME_TECNICO.md`: documentaciÃ³n tÃ©cnica del proyecto.
+- `docs/guion_presentacion_kim.md`: guion de presentaciÃ³n de Kim.
