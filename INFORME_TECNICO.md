@@ -535,7 +535,7 @@ Pruebas ejecutadas: 25   Fallidas: 0
 -- program is finished running --
 ```
 
-### 4.4 Pruebas de sensibilidad (�las pruebas detectan errores?)
+### 4.4 Pruebas de sensibilidad (¿las pruebas detectan errores?)
 
 Se introdujeron fallos a propósito en una copia del código para comprobar que las pruebas los notan:
 
@@ -550,23 +550,23 @@ El último caso es una limitación conocida de las pruebas: por eso `LG_LIMPIAR_
 
 ### 4.5 Registro de errores encontrados y soluciones
 
-| # | Error detectado | Impacto | Soluci�n aplicada |
+| # | Error detectado | Impacto | Solución aplicada |
 |---|---|---|---|
-| 1 | Una tabla de conteo `.word` quedó declarada justo después de datos `.byte` sin `.align 2` (en el programa de prueba) | Desalineaci�n de memoria: `lw` sobre una direcci�n no m�ltiplo de 4 detuvo la ejecuci�n con excepci�n | Agregar `.align 2` antes de cada `.word` que siga a datos de 1 byte. En `gato.s` ya se respeta ese orden (bytes primero, `.align 2`, luego palabras). |
-| 2 | Al ensamblar `gato.s` en MARS: `Symbol "IN_LEER_TECLA" not found in symbol table` (l�nea 175) | El programa no ensamblaba | MARS seguía usando la versión de `gato.s` sin el módulo de la vista (743 líneas): el archivo no se había reemplazado en el repo y MARS no recarga archivos cambiados desde fuera. Se reemplazó el archivo por la versión integrada (965 líneas), se comprobó con `findstr /n "IN_LEER_TECLA:"` y se cerró y volvió a abrir en MARS. |
-| 3 | Un commit de `gato_kim.asm` se hizo con el archivo vacío (`0 insertions`) | El m�dulo de la vista no quedaba en el historial | El archivo se había creado sin contenido. Se copió el código completo, se verificó el tamaño (245 líneas) antes de hacer un nuevo commit y recién entonces se subió. |
+| 1 | Una tabla de conteo `.word` quedÃ³ declarada justo despuÃ©s de datos `.byte` sin `.align 2` (en el programa de prueba) | Desalineación de memoria: `lw` sobre una dirección no múltiplo de 4 detuvo la ejecución con excepción | Agregar `.align 2` antes de cada `.word` que siga a datos de 1 byte. En `gato.s` ya se respeta ese orden (bytes primero, `.align 2`, luego palabras). |
+| 2 | Al ensamblar `gato.s` en MARS: `Symbol "IN_LEER_TECLA" not found in symbol table` (línea 175) | El programa no ensamblaba | MARS seguÃ­a usando la versiÃ³n de `gato.s` sin el mÃ³dulo de la vista (743 lÃ­neas): el archivo no se habÃ­a reemplazado en el repo y MARS no recarga archivos cambiados desde fuera. Se reemplazÃ³ el archivo por la versiÃ³n integrada (965 lÃ­neas), se comprobÃ³ con `findstr /n "IN_LEER_TECLA:"` y se cerrÃ³ y volviÃ³ a abrir en MARS. |
+| 3 | Un commit de `gato_kim.asm` se hizo con el archivo vacÃ­o (`0 insertions`) | El módulo de la vista no quedaba en el historial | El archivo se habÃ­a creado sin contenido. Se copiÃ³ el cÃ³digo completo, se verificÃ³ el tamaÃ±o (245 lÃ­neas) antes de hacer un nuevo commit y reciÃ©n entonces se subiÃ³. |
 
 No se registraron otros errores en la lógica durante las pruebas descritas.
 
 #### Riesgos conocidos (sin error observado)
 
-- `LG_COLOCAR_FICHA` no valida: con `$a0` = 10 escribiría un byte despu�s de `TABLERO` (sobre `TURNO`).
-  Es seguro mientras se llame despu�s de `LG_VALIDAR_JUGADA`, como hace `ST_JUGADA_JUGADOR`.
+- `LG_COLOCAR_FICHA` no valida: con `$a0` = 10 escribirÃ­a un byte después de `TABLERO` (sobre `TURNO`).
+  Es seguro mientras se llame después de `LG_VALIDAR_JUGADA`, como hace `ST_JUGADA_JUGADOR`.
 - `LG_PROBAR_GANADA` supone `RESULTADO` = 0 al entrar y lo deja en 0; `ST_JUGADA_JUGADOR` solo llama a
-  `LG_TURNO_CPU` cuando la partida sigue en curso, as� que se cumple.
-- `MODO_PRUEBA` est� en 1 para poder probar los estados; debe ponerse en 0 en el `.data` antes de entregar.
+  `LG_TURNO_CPU` cuando la partida sigue en curso, así que se cumple.
+- `MODO_PRUEBA` está en 1 para poder probar los estados; debe ponerse en 0 en el `.data` antes de entregar.
 - La vista depende de que `ST_*` y `LG_*` mantengan los valores de `TABLERO` (0, 1, 2), `TURNO` (1, 2) y `RESULTADO` (0-3):
-  si cambia esa codificaci�n, `UI_CELDA`, `UI_DIBUJAR_HUD` y `UI_MENSAJE_RESULTADO` deben revisarse.
+  si cambia esa codificación, `UI_CELDA`, `UI_DIBUJAR_HUD` y `UI_MENSAJE_RESULTADO` deben revisarse.
 - La estrategia de la CPU no es perfecta: una "horquilla" (dos amenazas a la vez) puede ganarle. Para modificar la dificultad se puede cambiar el orden de preferencia en `LG_ORDEN`, que solo afecta la jugada de relleno; para una CPU más fácil de vencer también puede quitarse el paso de bloqueo en `LG_TURNO_CPU`.
 
 ### 4.6 Pruebas de la vista (manuales)
@@ -575,25 +575,25 @@ La vista solo imprime texto en la consola de MARS, por lo que se prueba jugando 
 ventana *Run I/O* con lo esperado. Cada prueba se hace escribiendo la tecla y pulsando ENTER. Con `MODO_PRUEBA` = 1 las
 teclas W, L y D fuerzan victoria, derrota y empate sin jugar una partida completa.
 
-| # | Acci�n | Resultado esperado | Resultado obtenido |
+| # | Acción | Resultado esperado | Resultado obtenido |
 |---|---|---|---|
-| 1 | Ensamblar `src/gato.s` (F3) | `Assemble: operation completed successfully` | Correcto (ensambl� sin errores tras reemplazar el archivo; ver error 2) |
-| 2 | Ejecutar (F5) | Se muestra el men� con el t�tulo, el marcador m�ximo en 0 y las opciones J, I y Q | Por registrar |
+| 1 | Ensamblar `src/gato.s` (F3) | `Assemble: operation completed successfully` | Correcto (ensambló sin errores tras reemplazar el archivo; ver error 2) |
+| 2 | Ejecutar (F5) | Se muestra el menú con el título, el marcador máximo en 0 y las opciones J, I y Q | Por registrar |
 | 3 | `j` | Se muestra el marcador (puntos 0, vidas 3, turno del jugador) y el tablero con los números 1 a 9 | Por registrar |
 | 4 | `5` | Aparece X en el centro y luego la O de la CPU | Por registrar |
 | 5 | Elegir una casilla ocupada | Se ignora: el tablero no cambia | Por registrar |
 | 6 | `p` y luego `p` | Aparece el mensaje de pausa; al repetir vuelve el tablero | Por registrar |
-| 7 | `i` desde el men� | Se muestran las instrucciones y al pulsar una tecla vuelve el men� | Por registrar |
+| 7 | `i` desde el menú | Se muestran las instrucciones y al pulsar una tecla vuelve el menú | Por registrar |
 | 8 | `w` | Mensaje de partida ganada, +10 puntos en el marcador | Por registrar |
 | 9 | `d` | Mensaje de empate, +5 puntos | Por registrar |
 | 10 | `l` tres veces | Mensaje de partida perdida, una vida menos cada vez y, al llegar a 0, pantalla de Game Over | Por registrar |
-| 11 | Llegar a 50 puntos con `w` | Pantalla de victoria y, si se superó el r�cord, el aviso de nuevo r�cord | Por registrar |
-| 12 | `j` o `r` en la pantalla final | Empieza un juego nuevo con puntos y vidas reiniciados y el r�cord conservado | Por registrar |
-| 13 | `q` | Vuelve al men�; `q` desde el men� termina el programa | Por registrar |
+| 11 | Llegar a 50 puntos con `w` | Pantalla de victoria y, si se superÃ³ el récord, el aviso de nuevo récord | Por registrar |
+| 12 | `j` o `r` en la pantalla final | Empieza un juego nuevo con puntos y vidas reiniciados y el récord conservado | Por registrar |
+| 13 | `q` | Vuelve al menú; `q` desde el menú termina el programa | Por registrar |
 | 14 | Ganar una partida con W | Se reproduce un sonido agudo al finalizar la partida | Correcto |
 | 15 | Empatar una partida con D | Se reproduce un sonido medio al finalizar la partida | Correcto |
 | 16 | Perder una partida con L | Se reproduce un sonido grave al finalizar la partida | Correcto |
-| 17 | Ganar con una l�nea horizontal | Las tres casillas ganadoras se resaltan con un asterisco | Correcto |
-| 18 | Ganar con una l�nea vertical | Las tres casillas ganadoras se resaltan con un asterisco | Correcto |
+| 17 | Ganar con una línea horizontal | Las tres casillas ganadoras se resaltan con un asterisco | Correcto |
+| 18 | Ganar con una línea vertical | Las tres casillas ganadoras se resaltan con un asterisco | Correcto |
 | 19 | Ganar con una diagonal | Las tres casillas ganadoras se resaltan con un asterisco | Correcto |
 | 20 | Iniciar una nueva partida | El tablero se limpia y desaparece el resaltado | Correcto |
