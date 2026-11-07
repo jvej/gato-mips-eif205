@@ -5,8 +5,8 @@
 **Última actualización:** 07/11/2026
 
 > En este documento se registra cómo se construyó la lógica, qué se probó y qué errores aparecieron.
-> Se organiza en cuatro secciones: *1. Descripción general*, *2. Descripción de módulos*,
-> *3. Mapeo de memoria* y *4. Bitácora de pruebas*.
+> Se organiza en cinco secciones: *1. Descripción general*, *2. Descripción de módulos*,
+> *3. Mapeo de memoria*, *4. Bitácora de pruebas* y *5. Conclusiones*.
 
 ---
 
@@ -641,3 +641,36 @@ teclas W, L y D fuerzan victoria, derrota y empate sin jugar una partida complet
 | 25 | Ganar partidas hasta 40 puntos | El marcador muestra `META: faltan 10 puntos para llegar a 50` | Correcto |
 | 26 | Perder dos partidas con `l` | El marcador muestra `VIDAS: [#][ ][ ]` | Correcto |
 | 27 | Inspeccionar el *Data Segment* tras ensamblar | `TURNO` en `0x1001000A`, `PUNTOS` en `0x10010014`, `LINEAS` en `0x1001001C` y 3 bytes de relleno en `+17 … +19` | Correcto (captura en `docs/capturas`) |
+
+---
+
+## 5. Conclusiones
+
+1. **La división en módulos con un contrato explícito permitió trabajar en paralelo.** Cada integrante desarrolló su parte
+   (estados, lógica e interfaz) con prefijos propios (`ST_`, `LG_`, `UI_`/`IN_`) y una convención de registros común:
+   parámetros en `$a0`/`$a1`, resultado en `$v0`, y `$ra` y `$s0`-`$s7` guardados en la pila. Gracias a eso la integración
+   en un solo `gato.s` no requirió cambiar la lógica de ningún módulo.
+
+2. **El orden de las variables en `.data` es una decisión de diseño, no un detalle.** Declarar primero los bytes y luego
+   `.align 2` antes de las palabras hizo que, cuando la vista agregó `WIN_LINE` a mitad del bloque, el programa siguiera
+   funcionando: `.align 2` insertó 3 bytes de relleno y `PUNTOS` quedó en `0x10010014`. Sin esa directiva, `lw`/`sw`
+   habrían fallado por dirección no alineada. Lo que sí quedó desactualizado fue la documentación, lo que muestra que el
+   mapeo de memoria debe verificarse en MARS (*Labels* y *Data Segment*) cada vez que cambia el segmento de datos.
+
+3. **Una variable global puede quedar con valores que no representan el estado real.** `LG_PROBAR_GANADA` reutiliza
+   `LG_VERIFICAR_FIN` con jugadas provisionales, y eso dejaba en `WIN_LINE` líneas inexistentes. La solución no fue
+   confiar en la variable, sino verificar en `UI_ES_GANADORA` que la línea realmente esté completa. En ensamblador no hay
+   tipos ni encapsulación que eviten estos efectos laterales, así que cada rutina debe documentar qué lee y qué modifica.
+
+4. **La representación de los datos importa al leerlos.** El valor `0xFF` de `WIN_LINE` vale −1 con `lb` y 255 con `lbu`,
+   y MARS valida `.byte` como entero con signo. Entender el complemento a 2 permitió eliminar el aviso del ensamblador
+   (`.byte -1`) sin cambiar el contenido de la memoria.
+
+5. **Las pruebas deben observarse, no suponerse.** El resaltado de la línea ganadora se había registrado como correcto
+   aunque ninguna rutina lo dibujaba. Repetir las pruebas en MARS después de integrar permitió detectar el error y
+   corregirlo. El modo de prueba (teclas W, L y D) fue clave para verificar puntos, vidas, Game Over, victoria y reinicio
+   sin jugar partidas completas, y se desactiva (`MODO_PRUEBA` = 0) en la versión entregada.
+
+6. **El control de versiones con ramas por integrante dejó un historial verificable.** Cada módulo se desarrolló en su
+   rama (`estado`, `logica`, `interfaz`) y se integró en `main` solo después de comprobar que ensamblaba y funcionaba, de
+   modo que cada cambio, incluida cada corrección de esta bitácora, tiene un commit con su autor.
