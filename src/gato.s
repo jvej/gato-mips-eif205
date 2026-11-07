@@ -170,6 +170,8 @@ MSG_TECLA_INV:.asciiz "\n>> Tecla no valida. Usa 1-9, P, R o Q.\n"
 MSG_CPU_JUGO: .asciiz "\n>> El CPU jugo en la casilla "
 MSG_HUD5:     .asciiz "META: faltan "
 MSG_HUD6:     .asciiz " puntos para llegar a 50"
+MSG_VIDA_SI:  .asciiz "[#]"
+MSG_VIDA_NO:  .asciiz "[ ]"
 .text
 .globl main
 
@@ -997,8 +999,20 @@ UI_DIBUJAR_HUD:
     lw   $t0, HIGHSCORE
     M_PRINT_INT($t0)
     M_PRINT(MSG_HUD3)
-    lb   $t0, VIDAS
-    M_PRINT_INT($t0)
+    lb   $t0, VIDAS             # vidas actuales
+    li   $t1, 0                 # contador de posiciones
+hud_vida:
+    li   $t2, VIDAS_INI
+    bge  $t1, $t2, hud_vida_fin # ya dibujo las 3 posiciones
+    blt  $t1, $t0, hud_llena    # posicion < vidas: vida disponible
+    M_PRINT(MSG_VIDA_NO)
+    j    hud_vida_sig
+hud_llena:
+    M_PRINT(MSG_VIDA_SI)
+hud_vida_sig:
+    addi $t1, $t1, 1
+    j    hud_vida
+hud_vida_fin:
     M_PRINT(MSG_HUD4)
     lb   $t0, TURNO
     li   $t1, 1
