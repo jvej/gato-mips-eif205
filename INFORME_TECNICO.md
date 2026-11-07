@@ -2,7 +2,7 @@
 
 **Proyecto 2 – Juego del Gato (MIPS32 / MARS) – EIF205 Arquitectura de Computadoras**
 **Integrantes:** Kimberly Angulo Mendoza, Daniel Centeno Gutiérrez, Jeferson Sánchez Sánchez
-**Última actualización:** 05/11/2026
+**Última actualización:** 07/11/2026
 
 > En este documento se registra cómo se construyó la lógica, qué se probó y qué errores aparecieron.
 > Se organiza en cuatro secciones: *1. Descripción general*, *2. Descripción de módulos*,
@@ -194,6 +194,21 @@ Guarda `$ra` y `$s0` (la tecla) en la pila.
 victoria, derrota o empate, para poder probar la puntuación y los estados sin jugar cada partida completa. Debe ponerse
 `MODO_PRUEBA` en 0 antes de entregar.
 
+#### 2.3.8 Mejoras agregadas en la integración
+
+Después de integrar los tres módulos se agregaron mejoras pequeñas de jugabilidad, cada una en su propio commit:
+
+| Mejora | Rutina | Qué hace |
+|---|---|---|
+| Aviso de jugada inválida | `ST_JUGADA_JUGADOR` | Si la tecla no es 1-9 muestra `>> Tecla no valida...`; si la casilla está ocupada muestra `>> Esa casilla ya esta ocupada...`. Antes se ignoraban sin avisar. |
+| Jugada del CPU | `ST_JUGADA_JUGADOR` | Después del turno del CPU muestra `>> El CPU jugo en la casilla N`. Usa la casilla que `LG_TURNO_CPU` deja en `$v0`, guardada en `$s0` porque las llamadas siguientes sobrescriben `$v0`. |
+| Puntos para la meta | `UI_DIBUJAR_HUD` | Segunda línea del marcador: `META: faltan N puntos para llegar a 50` (`PTS_META − PUNTOS`, nunca negativo). |
+| Barra de vidas | `UI_DIBUJAR_HUD` | Las vidas se dibujan como `[#][#][ ]`: un ciclo de `VIDAS_INI` posiciones imprime `[#]` mientras la posición sea menor que `VIDAS`. |
+| Resaltado de la línea ganadora | `UI_CELDA`, `UI_ES_GANADORA` | Las tres casillas de la línea ganadora se dibujan como `*X*` o `*O*` (ver 2.5.4 y el error 4 de la sección 4.5). |
+
+Los mensajes nuevos (`MSG_OCUPADA`, `MSG_TECLA_INV`, `MSG_CPU_JUGO`, `MSG_HUD5`, `MSG_HUD6`, `MSG_VIDA_SI`, `MSG_VIDA_NO`)
+se declararon al final de los mensajes, después de `LINEAS`, por lo que no cambian las direcciones de la tabla 3.1.
+
 ### 2.4 Lógica
 
 **Propósito.** Implementa las reglas del tablero, sin dibujar nada ni leer el teclado: guarda el estado del tablero,
@@ -286,7 +301,8 @@ variables y los mensajes que define Jeferson.
 |---|---|---|---|---|
 | `IN_LEER_TECLA` | — | `$v0` = tecla traducida | `$t0` | Hoja |
 | `IN_VACIAR_BUFER` | — | — | — | Hoja |
-| `UI_CELDA` (auxiliar) | `$a0` = índice 0-8 | imprime una casilla | `$t0`-`$t2` | Hoja |
+| `UI_CELDA` (auxiliar) | `$a0` = índice 0-8 | imprime una casilla en 3 caracteres (` X ` o `*X*`) | `$s2`, `$s3`, `$t0`-`$t5` | `$ra`, `$s2`, `$s3` (12 bytes) |
+| `UI_ES_GANADORA` (auxiliar) | `$a0` = índice 0-8 | `$v0` = 1 si la casilla está en la línea ganadora | `$t0`-`$t6` | Hoja |
 | `UI_DIBUJAR_TABLERO` | — | imprime el tablero 3 × 3 | `$s0`, `$s1`, `$t0` | `$ra`, `$s0`, `$s1` (12 bytes) |
 | `UI_DIBUJAR_HUD` | — | imprime puntos, récord, vidas y turno | `$t0`, `$t1` | `$ra` (4 bytes) |
 | `UI_PANTALLA_MENU` | — | imprime el menú principal | `$t0` | `$ra` (4 bytes) |
@@ -321,11 +337,18 @@ entre módulos.
 #### 2.5.4 Tablero y marcador
 
 `UI_CELDA` recibe un índice 0-8 en `$a0`, lee `TABLERO[índice]` e imprime una casilla: `X` si vale 1, `O` si vale 2 y, si está
-vacía, su número de casilla (índice + 1). Así el jugador ve qué tecla corresponde a cada casilla.
+vacía, su número de casilla (índice + 1). Así el jugador ve qué tecla corresponde a cada casilla. Cada casilla ocupa 3
+caracteres: normalmente lleva un espacio a cada lado (` X `) y, si pertenece a la línea ganadora, un asterisco (`*X*`).
+
+Para decidir el resaltado, `UI_CELDA` llama a `UI_ES_GANADORA`. No basta con leer `WIN_LINE`: `LG_PROBAR_GANADA` llama a
+`LG_VERIFICAR_FIN` con jugadas provisionales y deja en `WIN_LINE` líneas que no existen, y en modo de prueba (W/L)
+`RESULTADO` se fuerza sin que haya línea. Por eso `UI_ES_GANADORA` exige que `RESULTADO` sea 1 o 2, que `WIN_LINE` esté
+entre 0 y 7 (se lee con `lbu`, así el valor `0xFF` se interpreta como 255 y no como −1) y que las tres casillas de esa
+línea tengan de verdad la ficha ganadora.
 
 `UI_DIBUJAR_TABLERO` recorre las 3 filas con `$s0` (fila) y `$s1` (primer índice de la fila, fila × 3). Para cada fila
-imprime un margen, las tres casillas separadas por `SEP` (` | `) y un salto de línea; entre filas imprime `LINEA_H`
-(`---+---+---`), y no después de la última. Guarda `$ra`, `$s0` y `$s1` en la pila porque llama a `UI_CELDA`.
+imprime un margen, las tres casillas separadas por `SEP` (`|`) y un salto de línea; entre filas imprime `LINEA_H`
+(` ---+---+---`), y no después de la última. Guarda `$ra`, `$s0` y `$s1` en la pila porque llama a `UI_CELDA`.
 
 `UI_DIBUJAR_HUD` imprime en una línea `PUNTOS`, `HIGHSCORE` (récord), `VIDAS` y el turno actual (`Jugador (X)` o `CPU (O)`
 según `TURNO`), usando `M_PRINT_INT` para los números.
@@ -414,7 +437,7 @@ ganadora en `RESULTADO`, y `LG_PROBAR_GANADA` compara `RESULTADO` con la ficha.
 | `LG_VALIDAR_JUGADA` | `$a0` = casilla 1-9 | `$v0` = **0 válida**, 1 inválida | `ST_JUGADA_JUGADOR` |
 | `LG_COLOCAR_FICHA` | `$a0` = casilla, `$a1` = ficha | escribe en `TABLERO` (no valida) | `ST_JUGADA_JUGADOR` |
 | `LG_VERIFICAR_FIN` | — | actualiza `RESULTADO` | `ST_JUGADA_JUGADOR` |
-| `LG_TURNO_CPU` | — | la CPU coloca una O | `ST_JUGADA_JUGADOR` |
+| `LG_TURNO_CPU` | — | la CPU coloca una O; `$v0` = casilla jugada (1-9), 0 si el tablero estaba lleno | `ST_JUGADA_JUGADOR` |
 
 ### 3.4 Segmentos y uso de la pila
 
@@ -425,7 +448,7 @@ datos se declaran primero los bytes (17 en total, desde `TABLERO`), luego `.alig
 mensajes `.asciiz`.
 
 `M_PUSH` reserva 4 bytes por registro (`addi $sp, $sp, -4` y `sw`) y `M_POP` los recupera y libera en orden inverso.
-Marcos de pila de la lógica:
+Marcos de pila de las rutinas que la usan:
 
 | Rutina | Registros guardados | Bytes |
 |---|---|---|
@@ -433,9 +456,11 @@ Marcos de pila de la lógica:
 | `LG_PRIMERA_LIBRE` | `$ra`, `$s0`, `$s1` | 12 |
 | `LG_TURNO_CPU` | `$ra` | 4 |
 | `UI_DIBUJAR_TABLERO` | `$ra`, `$s0`, `$s1` | 12 |
+| `UI_CELDA` | `$ra`, `$s2`, `$s3` | 12 |
+| `ST_JUGADA_JUGADOR` | `$ra`, `$s0` | 8 |
 | `UI_DIBUJAR_HUD`, `UI_PANTALLA_MENU`, `UI_PANTALLA_AYUDA`, `UI_PANTALLA_PAUSA`, `UI_MENSAJE_RESULTADO`, `UI_PANTALLA_GAMEOVER`, `UI_PANTALLA_VICTORIA`, `UI_PIE_FINAL` | `$ra` | 4 |
 
-Las demás rutinas `LG_*`, además de `IN_LEER_TECLA`, `IN_VACIAR_BUFER` y `UI_CELDA`, son procedimientos hoja (no llaman a otras) y no usan la pila.
+Las demás rutinas `LG_*`, además de `IN_LEER_TECLA`, `IN_VACIAR_BUFER` y `UI_ES_GANADORA`, son procedimientos hoja (no llaman a otras) y no usan la pila.
 
 ---
 
@@ -562,15 +587,17 @@ El último caso es una limitación conocida de las pruebas: por eso `LG_LIMPIAR_
 
 | # | Error detectado | Impacto | Solución aplicada |
 |---|---|---|---|
-| 1 | Una tabla de conteo `.word` quedÃ³ declarada justo despuÃ©s de datos `.byte` sin `.align 2` (en el programa de prueba) | Desalineación de memoria: `lw` sobre una dirección no múltiplo de 4 detuvo la ejecución con excepción | Agregar `.align 2` antes de cada `.word` que siga a datos de 1 byte. En `gato.s` ya se respeta ese orden (bytes primero, `.align 2`, luego palabras). |
-| 2 | Al ensamblar `gato.s` en MARS: `Symbol "IN_LEER_TECLA" not found in symbol table` (línea 175) | El programa no ensamblaba | MARS seguÃ­a usando la versiÃ³n de `gato.s` sin el mÃ³dulo de la vista (743 lÃ­neas): el archivo no se habÃ­a reemplazado en el repo y MARS no recarga archivos cambiados desde fuera. Se reemplazÃ³ el archivo por la versiÃ³n integrada (965 lÃ­neas), se comprobÃ³ con `findstr /n "IN_LEER_TECLA:"` y se cerrÃ³ y volviÃ³ a abrir en MARS. |
-| 3 | Un commit de `gato_kim.asm` se hizo con el archivo vacÃ­o (`0 insertions`) | El módulo de la vista no quedaba en el historial | El archivo se habÃ­a creado sin contenido. Se copiÃ³ el cÃ³digo completo, se verificÃ³ el tamaÃ±o (245 lÃ­neas) antes de hacer un nuevo commit y reciÃ©n entonces se subiÃ³. |
+| 1 | Una tabla de conteo `.word` quedó declarada justo después de datos `.byte` sin `.align 2` (en el programa de prueba) | Desalineación de memoria: `lw` sobre una dirección no múltiplo de 4 detuvo la ejecución con excepción | Agregar `.align 2` antes de cada `.word` que siga a datos de 1 byte. En `gato.s` ya se respeta ese orden (bytes primero, `.align 2`, luego palabras). |
+| 2 | Al ensamblar `gato.s` en MARS: `Symbol "IN_LEER_TECLA" not found in symbol table` (línea 175) | El programa no ensamblaba | MARS seguía usando la versión de `gato.s` sin el módulo de la vista (743 líneas): el archivo no se había reemplazado en el repo y MARS no recarga archivos cambiados desde fuera. Se reemplazó el archivo por la versión integrada (965 líneas), se comprobó con `findstr /n "IN_LEER_TECLA:"` y se cerró y volvió a abrir en MARS. |
+| 3 | Un commit de `gato_kim.asm` se hizo con el archivo vacío (`0 insertions`) | El módulo de la vista no quedaba en el historial | El archivo se había creado sin contenido. Se copió el código completo, se verificó el tamaño (245 líneas) antes de hacer un nuevo commit y recién entonces se subió. |
+| 4 | El resaltado de la línea ganadora no se veía: `WIN_LINE` se escribía en `LG_VERIFICAR_FIN` pero ninguna rutina de la vista lo leía | Las pruebas 17-19 se habían marcado como correctas sin que el tablero mostrara los asteriscos | Se agregó `UI_ES_GANADORA` y `UI_CELDA` ahora imprime `*X*` en las casillas de la línea ganadora. Se comprobó que `WIN_LINE` queda con valores falsos tras `LG_PROBAR_GANADA`, por eso la rutina verifica que la línea esté completa. |
+| 5 | Al ensamblar: `Warning ... line 124: "255" is out-of-range` | Solo un aviso (el byte se guardaba como `0xFF`), pero ensuciaba la salida del ensamblador | MARS valida `.byte` como entero con signo de 8 bits (−128 a 127). Se cambió a `.byte -1`, que en complemento a 2 es el mismo `0xFF`; se verificó en el *Data Segment* que el contenido no cambió. |
 
-No se registraron otros errores en la lógica durante las pruebas descritas.
+No se registraron otros errores durante las pruebas descritas.
 
 #### Riesgos conocidos (sin error observado)
 
-- `LG_COLOCAR_FICHA` no valida: con `$a0` = 10 escribirÃ­a un byte después de `TABLERO` (sobre `TURNO`).
+- `LG_COLOCAR_FICHA` no valida: con `$a0` = 10 escribiría un byte después de `TABLERO` (sobre `TURNO`).
   Es seguro mientras se llame después de `LG_VALIDAR_JUGADA`, como hace `ST_JUGADA_JUGADOR`.
 - `LG_PROBAR_GANADA` supone `RESULTADO` = 0 al entrar y lo deja en 0; `ST_JUGADA_JUGADOR` solo llama a
   `LG_TURNO_CPU` cuando la partida sigue en curso, así que se cumple.
@@ -589,21 +616,28 @@ teclas W, L y D fuerzan victoria, derrota y empate sin jugar una partida complet
 |---|---|---|---|
 | 1 | Ensamblar `src/gato.s` (F3) | `Assemble: operation completed successfully` | Correcto (ensambló sin errores tras reemplazar el archivo; ver error 2) |
 | 2 | Ejecutar (F5) | Se muestra el menú con el título, el marcador máximo en 0 y las opciones J, I y Q | Por registrar |
-| 3 | `j` | Se muestra el marcador (puntos 0, vidas 3, turno del jugador) y el tablero con los números 1 a 9 | Por registrar |
-| 4 | `5` | Aparece X en el centro y luego la O de la CPU | Por registrar |
-| 5 | Elegir una casilla ocupada | Se ignora: el tablero no cambia | Por registrar |
+| 3 | `j` | Se muestra el marcador (puntos 0, vidas 3, turno del jugador) y el tablero con los números 1 a 9 | Correcto |
+| 4 | `5` | Aparece X en el centro y luego la O de la CPU | Correcto (la CPU jugó en la casilla 1) |
+| 5 | Elegir una casilla ocupada | El tablero no cambia y se muestra `>> Esa casilla ya esta ocupada. Elige otra.` | Correcto |
 | 6 | `p` y luego `p` | Aparece el mensaje de pausa; al repetir vuelve el tablero | Por registrar |
 | 7 | `i` desde el menú | Se muestran las instrucciones y al pulsar una tecla vuelve el menú | Por registrar |
-| 8 | `w` | Mensaje de partida ganada, +10 puntos en el marcador | Por registrar |
-| 9 | `d` | Mensaje de empate, +5 puntos | Por registrar |
+| 8 | `w` | Mensaje de partida ganada, +10 puntos en el marcador | Correcto |
+| 9 | `d` | Mensaje de empate, +5 puntos | Correcto |
 | 10 | `l` tres veces | Mensaje de partida perdida, una vida menos cada vez y, al llegar a 0, pantalla de Game Over | Por registrar |
-| 11 | Llegar a 50 puntos con `w` | Pantalla de victoria y, si se superÃ³ el récord, el aviso de nuevo récord | Por registrar |
+| 11 | Llegar a 50 puntos con `w` | Pantalla de victoria y, si se superó el récord, el aviso de nuevo récord | Por registrar |
 | 12 | `j` o `r` en la pantalla final | Empieza un juego nuevo con puntos y vidas reiniciados y el récord conservado | Por registrar |
 | 13 | `q` | Vuelve al menú; `q` desde el menú termina el programa | Por registrar |
 | 14 | Ganar una partida con W | Se reproduce un sonido agudo al finalizar la partida | Correcto |
 | 15 | Empatar una partida con D | Se reproduce un sonido medio al finalizar la partida | Correcto |
 | 16 | Perder una partida con L | Se reproduce un sonido grave al finalizar la partida | Correcto |
-| 17 | Ganar con una línea horizontal | Las tres casillas ganadoras se resaltan con un asterisco | Correcto |
-| 18 | Ganar con una línea vertical | Las tres casillas ganadoras se resaltan con un asterisco | Correcto |
-| 19 | Ganar con una diagonal | Las tres casillas ganadoras se resaltan con un asterisco | Correcto |
+| 17 | Ganar con una línea horizontal | Las tres casillas ganadoras se resaltan con un asterisco | Correcto tras corregir el error 4 (jugadas 1, 9, 7, 8: fila inferior `*X*\|*X*\|*X*`) |
+| 18 | Ganar con una línea vertical | Las tres casillas ganadoras se resaltan con un asterisco | Por registrar (repetir tras corregir el error 4) |
+| 19 | Ganar con una diagonal | Las tres casillas ganadoras se resaltan con un asterisco | Por registrar (repetir tras corregir el error 4; perder con 2, 4, 3 da la diagonal 1-5-9 de la CPU) |
 | 20 | Iniciar una nueva partida | El tablero se limpia y desaparece el resaltado | Correcto |
+| 21 | Terminar en empate | No se resalta ninguna casilla | Correcto |
+| 22 | `w`, `l` o `d` en modo de prueba | No se resalta ninguna casilla (no hay línea real) | Correcto |
+| 23 | Escribir una letra que no es comando (`x`) | `>> Tecla no valida. Usa 1-9, P, R o Q.` y el tablero no cambia | Correcto |
+| 24 | `1` en un tablero limpio | Debajo del tablero: `>> El CPU jugo en la casilla 5` y la O aparece en el centro | Correcto |
+| 25 | Ganar partidas hasta 40 puntos | El marcador muestra `META: faltan 10 puntos para llegar a 50` | Correcto |
+| 26 | Perder dos partidas con `l` | El marcador muestra `VIDAS: [#][ ][ ]` | Correcto |
+| 27 | Inspeccionar el *Data Segment* tras ensamblar | `TURNO` en `0x1001000A`, `PUNTOS` en `0x10010014`, `LINEAS` en `0x1001001C` y 3 bytes de relleno en `+17 … +19` | Correcto (captura en `docs/capturas`) |
