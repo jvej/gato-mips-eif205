@@ -8,9 +8,9 @@ El juego consiste en una versión de tres en raya donde el jugador utiliza X y c
 
 ## Integrantes
 
-- Jeferson
-- Daniel
-- Kim
+- Jeferson Sánchez Sánchez
+- Daniel Centeno Gutiérrez
+- Kimberly Ángulo Mendoza
 
 ## Requisitos
 
