@@ -76,4 +76,3 @@ Las teclas W, L y D solo están disponibles cuando `MODO_PRUEBA = 1`.
 - `src/gato_kim.asm`: módulo de entrada e interfaz de Kim.
 - `pruebas/prueba_logica.asm`: pruebas de la lógica.
 - `INFORME_TECNICO.md`: documentación técnica del proyecto.
-- `docs/guion_presentacion_kim.md`: guion de presentación de Kim.

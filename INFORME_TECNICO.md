@@ -5,12 +5,12 @@
 **Última actualización:** 07/11/2026
 
 > En este documento se registra cómo se construyó la lógica, qué se probó y qué errores aparecieron.
-> Se organiza en cinco secciones: *1. Descripción general*, *2. Descripción de módulos*,
-> *3. Mapeo de memoria*, *4. Bitácora de pruebas* y *5. Conclusiones*.
+> Se organiza en cinco secciones: *1. Introducción*, *2. Descripción de módulos*,
+> *3. Arquitectura del software y mapeo de memoria*, *4. Bitácora de pruebas* y *5. Conclusiones*.
 
 ---
 
-## 1. Descripción general
+## 1. Introducción
 
 ### 1.1 Descripción del enunciado basado en el juego
 
@@ -376,7 +376,7 @@ según `TURNO`), usando `M_PRINT_INT` para los números.
 
 ---
 
-## 3. Mapeo de memoria
+## 3. Arquitectura del software y mapeo de memoria
 
 ### 3.1 Datos que usa la lógica
 
@@ -640,7 +640,7 @@ teclas W, L y D fuerzan victoria, derrota y empate sin jugar una partida complet
 | 24 | `1` en un tablero limpio | Debajo del tablero: `>> El CPU jugo en la casilla 5` y la O aparece en el centro | Correcto |
 | 25 | Ganar partidas hasta 40 puntos | El marcador muestra `META: faltan 10 puntos para llegar a 50` | Correcto |
 | 26 | Perder dos partidas con `l` | El marcador muestra `VIDAS: [#][ ][ ]` | Correcto |
-| 27 | Inspeccionar el *Data Segment* tras ensamblar | `TURNO` en `0x1001000A`, `PUNTOS` en `0x10010014`, `LINEAS` en `0x1001001C` y 3 bytes de relleno en `+17 … +19` | Correcto (captura en `docs/capturas`) |
+| 27 | Inspeccionar el *Data Segment* tras ensamblar | `TURNO` en `0x1001000A`, `PUNTOS` en `0x10010014`, `LINEAS` en `0x1001001C` y 3 bytes de relleno en `+17 … +19` | Correcto |
 
 ---
 
